@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-  <title>Smart Duka · Enterprise POS</title>
+  <title>Smart Duka · Barcode POS</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     :root {
@@ -49,8 +50,11 @@
     .bottom-item.active { background: rgba(200,136,58,0.15); color: var(--gold); }
     .flex-between { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
     .delete-icon { cursor: pointer; color: var(--rose); font-weight: bold; margin-left: 12px; }
-    .barcode-input-group { display: flex; gap: 8px; margin-bottom: 16px; }
-    .barcode-input-group input { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 40px; padding: 12px; color: white; }
+    .barcode-input-group { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .barcode-input-group input { flex: 2; background: var(--surface); border: 1px solid var(--border); border-radius: 40px; padding: 12px; color: white; }
+    .scanner-container { margin-top: 16px; border-radius: 20px; overflow: hidden; background: #000; }
+    #qr-reader { width: 100%; max-width: 500px; margin: 0 auto; }
+    #qr-reader video { border-radius: 16px; width: 100%; }
     input, select { font-family: var(--font-sans); }
     .loading { text-align: center; padding: 40px; color: var(--text-muted); }
   </style>
@@ -79,6 +83,7 @@
   let activeTab = 'dashboard';
   let saleCart = [];
   let revenueChart = null, analyticsChart = null;
+  let html5QrCode = null; // scanner instance
 
   const fmt = n => 'KES ' + (n || 0).toLocaleString();
   const showToast = (msg, err = false) => {
@@ -247,13 +252,18 @@
     revenueChart = new Chart(ctx, { type: 'line', data: { labels: last7, datasets: [{ label: 'Sales (KES)', data: sales7, borderColor: '#C8883A', backgroundColor: 'rgba(200,136,58,0.1)', fill: true, tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: true } });
   }
 
-  // ==================== POS with Barcode Scanner (Debugged) ====================
+  // ==================== POS with Barcode Scanner (Camera + Manual) ====================
   function renderPOS() {
     if (!products.length) return '<div class="loading">Loading products...</div>';
     return `<div class="card"><h3>🛒 Point of Sale</h3>
       <div class="barcode-input-group">
         <input type="text" id="barcodeScanInput" placeholder="🔍 Scan or enter barcode" autocomplete="off">
-        <button class="btn btn-primary" id="scanBarcodeBtn">Add by Barcode</button>
+        <button class="btn btn-primary" id="manualBarcodeBtn">Add by Code</button>
+        <button class="btn btn-primary" id="cameraScanBtn">📷 Scan Camera</button>
+      </div>
+      <div id="scannerContainer" style="display:none;" class="scanner-container">
+        <div id="qr-reader"></div>
+        <button class="btn" id="stopScannerBtn" style="margin-top:12px">❌ Stop Scanner</button>
       </div>
       <div class="flex-between" style="margin:16px 0;"><input id="posCustomer" placeholder="Customer name" class="btn" style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:40px;padding:12px"><select id="posProductSelect" style="background:var(--surface);border:1px solid var(--border);border-radius:40px;padding:12px;min-width:140px">${products.map(p => `<option value="${p.id}">${p.name} (${p.stock_qty} ${p.unit}) - ${fmt(p.selling_price)}</option>`)}</select><input id="posQty" type="number" value="1" min="1" style="width:80px;background:var(--surface);border-radius:40px;padding:12px;border:1px solid var(--border)"><button class="btn btn-primary" id="addToCartBtn">+ Add</button></div>
       <div id="cartItems" class="card" style="margin:16px 0;background:rgba(0,0,0,0.3)"></div>
@@ -261,30 +271,67 @@
       <div id="invoicePreview" class="invoice-preview" style="margin-top:24px;display:none"></div></div>`;
   }
 
+  async function startScanner() {
+    const container = document.getElementById('scannerContainer');
+    const readerDiv = document.getElementById('qr-reader');
+    if (!container || !readerDiv) return;
+    container.style.display = 'block';
+    if (html5QrCode) {
+      try { await html5QrCode.stop(); } catch(e) {}
+    }
+    html5QrCode = new Html5Qrcode("qr-reader");
+    try {
+      await html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } }, (decodedText) => {
+        // Success: add product by barcode
+        addProductByBarcode(decodedText);
+        stopScanner();
+      }, (err) => { console.warn(err); });
+    } catch (err) { showToast("Camera access denied or error", true); container.style.display = 'none'; }
+  }
+
+  async function stopScanner() {
+    if (html5QrCode) {
+      try { await html5QrCode.stop(); } catch(e) {}
+      html5QrCode = null;
+    }
+    const container = document.getElementById('scannerContainer');
+    if (container) container.style.display = 'none';
+  }
+
+  function addProductByBarcode(barcode) {
+    let product = products.find(p => p.barcode === barcode);
+    if (!product) product = products.find(p => p.name.toLowerCase().includes(barcode.toLowerCase()));
+    if (!product) {
+      showToast(`Product not found for barcode: ${barcode}`, true);
+      return;
+    }
+    addToCart(product, 1);
+  }
+
+  function addToCart(product, qty = 1) {
+    if (!product) return showToast('Product not found', true);
+    if (product.stock_qty < qty) return showToast(`Only ${product.stock_qty} left`, true);
+    let existing = saleCart.find(i => i.id === product.id);
+    if (existing) existing.qty += qty;
+    else saleCart.push({ id: product.id, name: product.name, qty, price: product.selling_price, unit: product.unit });
+    updateCartUI();
+    showToast(`${product.name} added to cart`);
+  }
+
   function attachPOSEvents() {
     const barcodeInput = document.getElementById('barcodeScanInput');
-    const scanBtn = document.getElementById('scanBarcodeBtn');
-    const addToCart = (product, qty = 1) => {
-      if (!product) return showToast('Product not found', true);
-      if (product.stock_qty < qty) return showToast(`Only ${product.stock_qty} left`, true);
-      let existing = saleCart.find(i => i.id === product.id);
-      if (existing) existing.qty += qty;
-      else saleCart.push({ id: product.id, name: product.name, qty, price: product.selling_price, unit: product.unit });
-      updateCartUI();
-      showToast(`${product.name} added to cart`);
-    };
-    const handleBarcode = () => {
+    const manualBtn = document.getElementById('manualBarcodeBtn');
+    const cameraBtn = document.getElementById('cameraScanBtn');
+    const stopBtn = document.getElementById('stopScannerBtn');
+    if (manualBtn) manualBtn.onclick = () => {
       let code = barcodeInput.value.trim();
       if (!code) return showToast('Enter barcode', true);
-      let product = products.find(p => p.barcode === code);
-      if (!product) product = products.find(p => p.name.toLowerCase().includes(code.toLowerCase()));
-      if (!product) return showToast('Product not found by barcode or name', true);
-      addToCart(product, 1);
+      addProductByBarcode(code);
       barcodeInput.value = '';
       barcodeInput.focus();
     };
-    scanBtn?.addEventListener('click', handleBarcode);
-    barcodeInput?.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleBarcode(); });
+    if (cameraBtn) cameraBtn.onclick = () => startScanner();
+    if (stopBtn) stopBtn.onclick = () => stopScanner();
 
     document.getElementById('addToCartBtn')?.addEventListener('click', () => {
       let pid = parseInt(document.getElementById('posProductSelect').value);
@@ -301,7 +348,7 @@
       if (saleCart.length === 0) return showToast('Cart empty', true);
       let method = document.getElementById('payMethodSelect').value;
       let total = saleCart.reduce((s, i) => s + i.qty * i.price, 0);
-      // Stock deduction
+      // Stock deduction check
       for (let item of saleCart) {
         let prod = products.find(p => p.id === item.id);
         if (!prod) return showToast(`Product ${item.name} not found`, true);
@@ -312,7 +359,6 @@
         prod.stock_qty -= item.qty;
         await updateItem('products', prod);
       }
-      // Customer handling
       let cust = customers.find(c => c.name.toLowerCase() === customerName.toLowerCase());
       if (!cust) {
         let cid = await addItem('customers', { name: customerName, phone: '', totalSpent: 0, credit: 0, debit: 0, balance: 0 });
@@ -343,8 +389,9 @@
       updateCartUI();
       document.getElementById('posCustomer').value = '';
       await loadData();
-      renderContent(); // refresh UI
+      renderContent();
     });
+    barcodeInput?.addEventListener('keypress', (e) => { if (e.key === 'Enter') manualBtn?.click(); });
   }
 
   function updateCartUI() {
@@ -386,7 +433,6 @@
     if (!confirm('⚠️ Delete this sale? Stock will be restored and customer balance adjusted.')) return;
     let sale = sales.find(s => s.id === id);
     if (!sale) return;
-    // Restore stock
     if (sale.items && sale.items.length) {
       for (let item of sale.items) {
         let prod = products.find(p => p.name === item.name);
@@ -396,7 +442,6 @@
       let prod = products.find(p => p.name === sale.product);
       if (prod) { prod.stock_qty += sale.qty || 1; await updateItem('products', prod); }
     }
-    // Adjust customer balance
     let cust = customers.find(c => c.name === sale.customerName);
     if (cust) {
       if (sale.method === 'credit') { cust.credit -= sale.amount; cust.balance = cust.credit - cust.debit; }
