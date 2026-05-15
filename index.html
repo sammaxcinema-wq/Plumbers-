@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-  <title>Smart Duka · Barcode POS</title>
+  <title>Smart Duka Pro · Barcode POS</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -282,7 +282,6 @@
     html5QrCode = new Html5Qrcode("qr-reader");
     try {
       await html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } }, (decodedText) => {
-        // Success: add product by barcode
         addProductByBarcode(decodedText);
         stopScanner();
       }, (err) => { console.warn(err); });
@@ -333,7 +332,8 @@
     if (cameraBtn) cameraBtn.onclick = () => startScanner();
     if (stopBtn) stopBtn.onclick = () => stopScanner();
 
-    document.getElementById('addToCartBtn')?.addEventListener('click', () => {
+    const addBtn = document.getElementById('addToCartBtn');
+    if (addBtn) addBtn.onclick = () => {
       let pid = parseInt(document.getElementById('posProductSelect').value);
       let qty = parseFloat(document.getElementById('posQty').value) || 1;
       if (qty <= 0) qty = 1;
@@ -341,24 +341,28 @@
       if (!prod) return showToast('Product error', true);
       addToCart(prod, qty);
       document.getElementById('posQty').value = 1;
-    });
-    document.getElementById('completeSaleBtn')?.addEventListener('click', async () => {
+    };
+
+    const completeBtn = document.getElementById('completeSaleBtn');
+    if (completeBtn) completeBtn.onclick = async () => {
       let customerName = document.getElementById('posCustomer').value.trim();
       if (!customerName) return showToast('Customer name required', true);
       if (saleCart.length === 0) return showToast('Cart empty', true);
       let method = document.getElementById('payMethodSelect').value;
       let total = saleCart.reduce((s, i) => s + i.qty * i.price, 0);
-      // Stock deduction check
+      // Stock check
       for (let item of saleCart) {
         let prod = products.find(p => p.id === item.id);
         if (!prod) return showToast(`Product ${item.name} not found`, true);
         if (prod.stock_qty < item.qty) return showToast(`Insufficient stock for ${prod.name}`, true);
       }
+      // Deduct stock
       for (let item of saleCart) {
         let prod = products.find(p => p.id === item.id);
         prod.stock_qty -= item.qty;
         await updateItem('products', prod);
       }
+      // Customer handling
       let cust = customers.find(c => c.name.toLowerCase() === customerName.toLowerCase());
       if (!cust) {
         let cid = await addItem('customers', { name: customerName, phone: '', totalSpent: 0, credit: 0, debit: 0, balance: 0 });
@@ -379,7 +383,7 @@
       let saleId = await addItem('sales', saleObj);
       let invNumber = `INV-${new Date().getFullYear()}-${String(invoices.length + 1).padStart(5, '0')}`;
       let inv = { number: invNumber, saleId, customerName, items: saleCart.map(i => ({ name: i.name, qty: i.qty, price: i.price, unit: i.unit })), total, method, date: new Date().toISOString(), shopName: currentUser?.shopName || 'Smart Duka' };
-      let invId = await addItem('invoices', inv);
+      await addItem('invoices', inv);
       invoices.push(inv);
       showToast(`Invoice ${invNumber} created`);
       let previewDiv = document.getElementById('invoicePreview');
@@ -390,7 +394,7 @@
       document.getElementById('posCustomer').value = '';
       await loadData();
       renderContent();
-    });
+    };
     barcodeInput?.addEventListener('keypress', (e) => { if (e.key === 'Enter') manualBtn?.click(); });
   }
 
@@ -408,7 +412,7 @@
   window.removeCartItem = (idx) => { saleCart.splice(idx, 1); updateCartUI(); };
 
   function renderInvoiceHTML(inv) {
-    let itemsHtml = inv.items.map(i => `<tr><td>${i.name}</td><td>${i.qty} ${i.unit || ''}</td><td>${fmt(i.price)}</td>`).join('');
+    let itemsHtml = inv.items.map(i => `<td><td>${i.name}</td><td>${i.qty} ${i.unit || ''}</td><td>${fmt(i.price)}</td>`).join('');
     return `<div style="font-family:monospace;background:white;color:#111;padding:20px;border-radius:16px;max-width:380px;margin:auto"><h3 style="text-align:center">${inv.shopName}</h3><p style="text-align:center">${inv.number} | ${new Date(inv.date).toLocaleString()}</p><hr><p><b>Customer:</b> ${inv.customerName}</p><table style="width:100%;margin:12px 0"><thead><tr><th>Item</th><th>Qty</th><th>Price</th></tr></thead><tbody>${itemsHtml}</tbody></table><hr><p><b>Total:</b> ${fmt(inv.total)} | <b>Method:</b> ${inv.method}</p><p style="text-align:center">Asante Sana!</p></div>`;
   }
   window.printInvoice = async (id) => {
