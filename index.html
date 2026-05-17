@@ -2,509 +2,1256 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-  <title>Smart Duka Pro · Enterprise Barcode POS</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
+  <title>MossFocus · Calm Deep Work Studio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    /* ─────────────────────────────────────────────────────────────
+       DESIGN TOKENS  (60 / 30 / 10) – unchanged
+    ───────────────────────────────────────────────────────────── */
     :root {
-      --bg: #050B08; --surface: #0E1612; --card: rgba(18,26,20,0.85); --border: rgba(255,255,255,0.06);
-      --gold: #C8883A; --gold-glow: #E9B96E; --emerald: #0A9167; --rose: #E54562; --blue: #4A9EDF;
-      --text: #EDF2EF; --text-muted: #8BA398; --font-sans: 'Inter', system-ui; --font-serif: 'Playfair Display', serif;
-      --radius: 20px; --radius-sm: 12px;
+      --canvas:          #FEFAF5;
+      --surface-card:    #FFFFFF;
+      --surface-subtle:  #F3EDE3;
+      --border-default:  #E8E0D4;
+      --text-primary:    #2B3630;
+      --text-secondary:  #3D4F47;
+      --text-disabled:   #8A847A;
+      --text-inverse:    #FFFFFF;
+      --moss:            #7DA089;
+      --moss-dark:       #2B5A3A;
+      --moss-hover:      #6D9179;
+      --moss-active:     #5D8169;
+      --coral:           #FFB392;
+      --coral-light:     #FFD4B8;
+      --success:         #5A9E7A;
+      --danger:          #D4645A;
+      --shadow-1: 0 1px 2px rgba(43,54,48,.04), 0 4px 12px rgba(43,54,48,.06);
+      --shadow-2: 0 4px 8px  rgba(43,54,48,.05), 0 12px 28px rgba(43,54,48,.10);
+      --shadow-3: 0 8px 16px rgba(43,54,48,.08), 0 24px 40px rgba(43,54,48,.14);
+      --shadow-pressed: inset 0 2px 6px rgba(0,0,0,.12);
+      --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px;
+      --sp-5:20px; --sp-6:24px; --sp-8:32px; --sp-10:40px;
+      --t-xs:   0.64rem;
+      --t-sm:   0.80rem;
+      --t-base: 1.00rem;
+      --t-md:   1.25rem;
+      --t-lg:   1.563rem;
+      --t-xl:   1.953rem;
+      --t-2xl:  2.441rem;
+      --t-hero: 3.052rem;
+      --r-sm:  0.75rem;
+      --r-md:  1.25rem;
+      --r-lg:  1.75rem;
+      --r-xl:  2.25rem;
+      --r-full: 9999px;
     }
-    body { background: var(--bg); color: var(--text); font-family: var(--font-sans); overflow-x: hidden; }
-    #app { display: flex; min-height: 100vh; }
-    /* Sidebar */
-    .sidebar { width: 280px; background: rgba(8,12,10,0.95); backdrop-filter: blur(32px); border-right: 1px solid var(--border); position: fixed; height: 100vh; padding: 28px 0; z-index: 40; transition: transform 0.3s; overflow-y: auto; }
-    .logo { padding: 0 24px 28px; border-bottom: 1px solid var(--border); font-family: var(--font-serif); font-size: 28px; }
-    .logo em { color: var(--gold); font-style: italic; }
-    .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; margin: 4px 12px; border-radius: 14px; color: var(--text-muted); font-weight: 500; cursor: pointer; background: transparent; border: none; width: calc(100% - 24px); font-size: 14px; }
-    .nav-item i { font-style: normal; font-size: 20px; width: 28px; }
-    .nav-item.active { background: rgba(200,136,58,0.12); color: var(--gold-glow); }
-    .main { flex: 1; margin-left: 280px; }
-    @media (max-width: 1024px) { .sidebar { transform: translateX(-100%); } .sidebar.open { transform: translateX(0); } .main { margin-left: 0; } }
-    .mobile-header { display: none; position: sticky; top: 0; background: rgba(5,11,8,0.9); backdrop-filter: blur(20px); padding: 12px 20px; border-bottom: 1px solid var(--border); z-index: 35; }
-    @media (max-width: 1024px) { .mobile-header { display: flex; align-items: center; gap: 12px; } }
-    .content { padding: 24px 28px 80px; }
-    @media (max-width: 768px) { .content { padding: 16px 16px 80px; } }
-    .card { background: var(--card); backdrop-filter: blur(12px); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; transition: all 0.2s; }
-    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-bottom: 24px; }
-    .stat-card { background: linear-gradient(135deg, rgba(18,26,20,0.9), rgba(10,18,13,0.8)); border: 1px solid rgba(200,136,58,0.15); border-radius: 24px; padding: 20px; }
-    .stat-value { font-family: var(--font-serif); font-size: 38px; font-weight: 500; margin-top: 8px; }
-    .btn { border: none; border-radius: 100px; padding: 10px 20px; font-weight: 600; font-size: 13px; cursor: pointer; background: rgba(255,255,255,0.05); color: var(--text); transition: 0.2s; }
-    .btn-primary { background: linear-gradient(135deg, var(--gold), #A86E28); color: #0A0600; }
-    .btn-emerald { background: linear-gradient(135deg, var(--emerald), #076B4E); color: white; }
-    .btn-danger { background: linear-gradient(135deg, var(--rose), #b91c2c); color: white; }
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(12px); z-index: 100; display: none; align-items: center; justify-content: center; }
-    .modal-overlay.on { display: flex; }
-    .modal-sheet { background: #0E1612; border-radius: 28px; max-width: 550px; width: 90%; max-height: 85vh; overflow-y: auto; padding: 24px; border: 1px solid rgba(255,255,255,0.1); }
-    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--emerald); padding: 10px 20px; border-radius: 40px; font-weight: 600; z-index: 200; animation: fadeIn 0.2s; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } }
-    .bottom-nav { display: none; position: fixed; bottom: 12px; left: 12px; right: 12px; background: rgba(8,12,10,0.95); backdrop-filter: blur(24px); border-radius: 40px; padding: 6px; z-index: 45; justify-content: space-around; }
-    @media (max-width: 1024px) { .bottom-nav { display: flex; } }
-    .bottom-item { flex: 1; text-align: center; padding: 8px; font-size: 10px; color: var(--text-muted); background: transparent; border: none; border-radius: 28px; }
-    .bottom-item.active { background: rgba(200,136,58,0.15); color: var(--gold); }
-    .flex-between { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
-    input, select { background: var(--surface); border: 1px solid var(--border); border-radius: 40px; padding: 12px 16px; color: white; font-size: 14px; width: 100%; }
-    .barcode-input-group { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-    .barcode-input-group input { flex: 2; }
-    .scan-flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; opacity: 0; pointer-events: none; z-index: 300; transition: opacity 0.05s; }
-    .scan-indicator { position: fixed; bottom: 100px; right: 20px; background: var(--gold); color: #0A0600; padding: 8px 16px; border-radius: 40px; font-size: 12px; z-index: 150; display: none; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-    .highlight { background: rgba(200,136,58,0.4); transition: background 0.2s; }
-    @media (max-width: 768px) { .stat-value { font-size: 28px; } .btn { padding: 8px 16px; } }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--canvas);
+      background-image:
+        radial-gradient(ellipse 60% 40% at 5% 0%,  rgba(125,160,137,.07) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 60% at 95% 100%, rgba(255,179,146,.05) 0%, transparent 70%);
+      color: var(--text-primary);
+      min-height: 100dvh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .card {
+      background: var(--surface-card);
+      border-radius: var(--r-xl);
+      box-shadow: var(--shadow-1);
+      transition: box-shadow .2s ease, transform .2s cubic-bezier(.16,1,.3,1);
+    }
+    .card:hover { box-shadow: var(--shadow-2); }
+
+    .btn { cursor: pointer; transition: all .15s ease; border: none; outline: none; }
+    .btn:focus-visible { outline: 3px solid var(--moss-dark); outline-offset: 3px; }
+    .btn:active { transform: scale(.96); }
+
+    .btn-primary {
+      width: 68px; height: 68px;
+      border-radius: 50%;
+      background: var(--moss);
+      color: #fff;
+      font-size: 1.4rem;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--shadow-3);
+    }
+    .btn-primary:hover   { background: var(--moss-hover); transform: scale(1.04); }
+    .btn-primary:active  { background: var(--moss-active); transform: scale(.96); box-shadow: var(--shadow-pressed); }
+
+    .btn-secondary {
+      height: 44px; padding: 0 var(--sp-5);
+      border-radius: var(--r-full);
+      background: var(--surface-subtle);
+      color: var(--text-secondary);
+      font-size: var(--t-sm); font-weight: 500;
+      display: flex; align-items: center; gap: var(--sp-2);
+    }
+    .btn-secondary:hover   { background: var(--border-default); }
+    .btn-secondary:active  { box-shadow: var(--shadow-pressed); }
+
+    .seg-group {
+      display: flex; background: var(--surface-subtle);
+      border-radius: var(--r-full); padding: 4px; gap: 2px;
+    }
+    .seg-btn {
+      flex: 1; height: 36px; border-radius: var(--r-full);
+      font-size: var(--t-sm); font-weight: 500;
+      color: var(--text-secondary);
+      background: transparent;
+      transition: background .2s, color .15s, box-shadow .2s;
+      cursor: pointer; border: none;
+      white-space: nowrap; padding: 0 var(--sp-3);
+    }
+    .seg-btn[aria-selected="true"] {
+      background: var(--surface-card);
+      color: var(--text-primary);
+      box-shadow: var(--shadow-1);
+    }
+    .seg-btn:focus-visible { outline: 3px solid var(--moss-dark); outline-offset: 2px; }
+
+    .ring-track   { fill: none; stroke: var(--surface-subtle); }
+    .ring-fill    { fill: none; stroke-linecap: round; }
+    .ring-fill.work  { stroke: url(#workGrad); }
+    .ring-fill.break { stroke: url(#breakGrad); }
+    .ring-fill { transition: stroke-dashoffset 1s linear; }
+
+    .moss-toggle {
+      appearance: none; width: 44px; height: 24px;
+      background: #DCD0C0; border-radius: 40px;
+      position: relative; cursor: pointer;
+      transition: background .2s;
+    }
+    .moss-toggle:checked { background: var(--moss); }
+    .moss-toggle::after {
+      content: ""; width: 20px; height: 20px; background: #fff;
+      border-radius: 50%; position: absolute; top: 2px; left: 3px;
+      transition: transform .2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,.15);
+    }
+    .moss-toggle:checked::after { transform: translateX(20px); }
+    .moss-toggle:focus-visible { outline: 3px solid var(--moss-dark); outline-offset: 3px; }
+
+    .plan-check {
+      appearance: none; width: 20px; height: 20px; flex-shrink: 0;
+      border: 2px solid var(--moss); border-radius: 6px;
+      background: #fff; cursor: pointer; transition: .1s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .plan-check:checked { background: var(--moss); border-color: var(--moss); }
+    .plan-check:checked::after { content: "✓"; color: #fff; font-size: 13px; }
+    .plan-check:focus-visible { outline: 3px solid var(--moss-dark); outline-offset: 2px; }
+
+    .input-field {
+      height: 44px; width: 100%;
+      background: var(--surface-card);
+      border: 1.5px solid var(--border-default);
+      border-radius: var(--r-md);
+      padding: 0 var(--sp-4);
+      font-family: inherit; font-size: var(--t-sm);
+      color: var(--text-primary);
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .input-field::placeholder { color: var(--text-disabled); }
+    .input-field:focus {
+      outline: none;
+      border-color: var(--moss);
+      box-shadow: 0 0 0 3px rgba(125,160,137,.15);
+    }
+
+    .collapsible { max-height: 0; overflow: hidden; transition: max-height .3s ease-out; }
+    .collapsible.open { max-height: 280px; }
+
+    .typing-dots { display: inline-flex; gap: 5px; align-items: center; padding: 4px 2px; }
+    .typing-dots span {
+      width: 7px; height: 7px; background: var(--moss);
+      border-radius: 50%; opacity: .4;
+      animation: dotPulse 1.2s infinite ease-in-out;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: .2s; }
+    .typing-dots span:nth-child(3) { animation-delay: .4s; }
+    @keyframes dotPulse {
+      0%,80%,100% { opacity:.2; transform:scale(.9); }
+      40%          { opacity:1;  transform:scale(1.1); }
+    }
+
+    .toast {
+      position: fixed;
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 84px);
+      left: 50%; transform: translateX(-50%) translateY(0);
+      background: var(--text-primary); color: var(--text-inverse);
+      padding: var(--sp-3) var(--sp-5); border-radius: var(--r-full);
+      font-size: var(--t-sm); font-weight: 500;
+      box-shadow: var(--shadow-3);
+      z-index: 9999; white-space: nowrap;
+      max-width: min(320px, 92vw);
+      animation: toastIn .25s cubic-bezier(.16,1,.3,1), toastOut .2s ease 1.9s forwards;
+      pointer-events: none;
+    }
+    @keyframes toastIn  { from { opacity:0; transform:translateX(-50%) translateY(14px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+    @keyframes toastOut { to   { opacity:0; transform:translateX(-50%) translateY(-8px); } }
+
+    .metric-value {
+      font-family: 'DM Serif Display', serif;
+      font-size: var(--t-2xl); line-height: 1;
+      color: var(--text-primary);
+    }
+
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px; border-radius: var(--r-full);
+      font-size: var(--t-xs); font-weight: 600; letter-spacing: .04em;
+      background: var(--surface-subtle); color: var(--text-secondary);
+      transition: all .3s;
+    }
+    .status-badge.live { background: rgba(90,158,122,.12); color: #2B6644; }
+    .status-badge .dot {
+      width: 6px; height: 6px; border-radius: 50%; background: currentColor;
+    }
+    .status-badge.live .dot { animation: livePulse 1.5s infinite; }
+    @keyframes livePulse { 0%,100%{opacity:1;} 50%{opacity:.3;} }
+
+    .lamp-orb {
+      width: 120px; height: 120px; border-radius: 50%;
+      background: radial-gradient(circle at 38% 38%, #FFF9F2, #FFE8D0);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(255,179,146,.25), var(--shadow-1);
+      transition: box-shadow .1s ease, transform .2s;
+      user-select: none; -webkit-user-select: none;
+      position: relative;
+    }
+    .lamp-orb:active { transform: scale(.97); }
+
+    .ambient-thumb {
+      background: var(--surface-subtle);
+      border-radius: var(--r-md);
+      height: 80px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 4px;
+      transition: background .2s, transform .15s;
+      cursor: pointer;
+    }
+    .ambient-thumb:hover { background: var(--border-default); transform: scale(1.02); }
+
+    .site-row {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--surface-subtle); padding: 8px 12px;
+      border-radius: var(--r-sm); gap: 8px;
+      animation: slideIn .2s ease;
+    }
+    @keyframes slideIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; width: 100%;
+      height: calc(60px + env(safe-area-inset-bottom, 0px));
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      background: rgba(255,255,255,.9);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-top: 1px solid var(--border-default);
+      display: flex; align-items: flex-start; padding-top: 8px;
+      z-index: 100;
+    }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; gap: 3px;
+      min-height: 44px; padding: 4px 8px;
+      border-radius: var(--r-sm);
+      color: var(--text-disabled);
+      font-size: var(--t-xs); font-weight: 500;
+      transition: color .15s, box-shadow .15s;
+      cursor: pointer; background: none; border: none;
+      text-decoration: none;
+    }
+    .nav-item[aria-current="page"] {
+      color: var(--moss);
+      box-shadow: inset 0 2.5px 0 var(--moss);
+    }
+    .nav-item:focus-visible { outline: 3px solid var(--moss-dark); outline-offset: 2px; }
+    .nav-item i { font-size: 18px; }
+
+    body.break-mode .card { background: #FFF9F5; }
+    body.break-mode { background-image:
+      radial-gradient(ellipse 60% 40% at 5% 0%, rgba(255,179,146,.08) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 60% at 95% 100%, rgba(255,179,146,.06) 0%, transparent 70%);
+    }
+
+    .fade-up {
+      opacity: 0; transform: translateY(18px);
+      animation: fadeUp .5s cubic-bezier(.16,1,.3,1) forwards;
+    }
+    @keyframes fadeUp { to { opacity:1; transform:translateY(0); } }
+
+    .wordmark {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.65rem; line-height: 1;
+      color: var(--text-primary);
+      letter-spacing: -.01em;
+    }
+    .wordmark span { color: var(--moss); }
+
+    /* MOBILE FIRST: .main-grid is flex column by default */
+    .main-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* DESKTOP LAYOUT: grid */
+    @media (min-width: 1024px) {
+      .main-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto auto auto;
+        gap: 1.5rem;
+      }
+      .area-timer    { grid-column: 1; grid-row: 1; }
+      .area-coach    { grid-column: 2; grid-row: 1; }
+      .area-metrics  { grid-column: 1 / -1; grid-row: 2; }
+      .area-analytics{ grid-column: 1; grid-row: 3; }
+      .area-blocker  { grid-column: 2; grid-row: 3; }
+      .area-plan     { grid-column: 1; grid-row: 4; }
+      .area-ambient  { grid-column: 2; grid-row: 4; }
+    }
+
+    .sr-only {
+      position: absolute; width: 1px; height: 1px;
+      padding: 0; margin: -1px; overflow: hidden;
+      clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+    }
+
+    #coachMessageArea {
+      min-height: 60px;
+      transition: opacity .3s;
+    }
+
+    #customPanel {
+      display: none;
+      align-items: center;
+      gap: var(--sp-3);
+      margin-top: var(--sp-3);
+      justify-content: center;
+    }
+
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 4px; }
   </style>
 </head>
 <body>
-<div id="app" style="display:none">
-  <aside class="sidebar" id="sidebar"><div class="logo">Smart <em>Duka</em></div><nav id="sideNav"></nav></aside>
-  <div class="main">
-    <div class="mobile-header"><button class="btn" onclick="toggleSidebar()">☰</button><span style="font-family:var(--font-serif);font-size:22px">Smart <em style="color:var(--gold)">Duka</em></span><button class="btn" onclick="logout()" style="margin-left:auto">🚪</button></div>
-    <div class="content" id="mainContent"></div>
+
+<div id="a11y-alerts"  role="alert"  aria-live="assertive" aria-atomic="true" class="sr-only"></div>
+<div id="a11y-status"  role="status" aria-live="polite"    aria-atomic="true" class="sr-only"></div>
+
+<div class="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-8 pt-6 pb-28 lg:pb-10">
+
+  <header class="flex justify-between items-center mb-6 fade-up" style="animation-delay:.02s">
+    <div class="flex items-center gap-3">
+      <div style="width:42px;height:42px;background:var(--moss);border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-2);">
+        <i class="fas fa-seedling" style="color:#fff;font-size:18px;"></i>
+      </div>
+      <div>
+        <p class="wordmark">Moss<span>Focus</span></p>
+        <p style="font-size:var(--t-xs);color:var(--text-secondary);margin-top:1px;">deep work ecosystem</p>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="status-badge" id="globalStatus">
+        <span class="dot"></span>
+        <span id="globalStatusText">Ready</span>
+      </div>
+      <button class="btn btn-secondary" aria-label="Settings" style="width:44px;padding:0;justify-content:center;">
+        <i class="fas fa-sliders-h" style="font-size:15px;"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN GRID (now clean of inline style) -->
+  <div class="main-grid">
+    <!-- TIMER CARD (unchanged structure) -->
+    <div class="card area-timer fade-up" style="padding:var(--sp-6);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-5);">
+        <h2 style="font-family:'DM Serif Display',serif;font-size:var(--t-lg);color:var(--text-primary);">Focus Timer</h2>
+        <span id="timerLiveStatus" class="status-badge" role="status" aria-live="polite" aria-atomic="true">
+          <span class="dot"></span>
+          <span id="timerStatusText">Ready</span>
+        </span>
+      </div>
+
+      <div style="display:flex;flex-direction:column;align-items:center;gap:var(--sp-5);">
+        <div style="position:relative;width:220px;height:220px;">
+          <svg viewBox="0 0 140 140" width="220" height="220" style="transform:rotate(-90deg);" aria-hidden="true">
+            <defs>
+              <linearGradient id="workGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#7DA089"/>
+                <stop offset="100%" stop-color="#5A9E7A"/>
+              </linearGradient>
+              <linearGradient id="breakGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#FFB392"/>
+                <stop offset="100%" stop-color="#FFD4B8"/>
+              </linearGradient>
+            </defs>
+            <circle class="ring-track" cx="70" cy="70" r="58" stroke-width="7"/>
+            <circle id="timerRingFill" class="ring-fill work" cx="70" cy="70" r="58"
+              stroke-width="7"
+              stroke-dasharray="364.42"
+              stroke-dashoffset="364.42"/>
+          </svg>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;">
+            <span id="timerDisplay" style="font-family:'DM Serif Display',serif;font-size:var(--t-hero);line-height:1;letter-spacing:-.02em;" aria-live="off">50:00</span>
+            <span id="timerModeLabel" style="font-size:var(--t-xs);font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--moss);background:rgba(125,160,137,.1);padding:3px 10px;border-radius:var(--r-full);">Deep Work</span>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:var(--sp-4);">
+          <button id="stopBtn" class="btn btn-secondary" aria-label="Stop timer">
+            <i class="fas fa-stop" style="font-size:13px;"></i>
+            <span>Stop</span>
+          </button>
+          <button id="startBtn" class="btn btn-primary" aria-label="Start focus timer" role="button">
+            <i class="fas fa-play" id="startBtnIcon" style="margin-left:3px;"></i>
+          </button>
+          <button id="skipBtn" class="btn btn-secondary" aria-label="Skip break">
+            <span>Skip</span>
+            <i class="fas fa-forward" style="font-size:13px;"></i>
+          </button>
+        </div>
+
+        <div style="width:100%;max-width:400px;">
+          <div class="seg-group" role="group" aria-label="Timer mode">
+            <button class="seg-btn" data-mode="Pomodoro" aria-selected="false">🍅 Pomodoro</button>
+            <button class="seg-btn" data-mode="DeepWork" aria-selected="true">🧠 Deep Work</button>
+            <button class="seg-btn" data-mode="Flow"     aria-selected="false">🌊 Flow</button>
+            <button class="seg-btn" data-mode="Custom"   aria-selected="false">⚙️ Custom</button>
+          </div>
+          <div id="customPanel">
+            <label for="customMinutes" style="font-size:var(--t-sm);color:var(--text-secondary);white-space:nowrap;">Duration (min)</label>
+            <input type="number" id="customMinutes" class="input-field" value="30"
+                   min="1" max="180" aria-label="Custom timer duration in minutes"
+                   style="width:80px;text-align:center;">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI COACH CARD (unchanged) -->
+    <div class="card area-coach fade-up" style="padding:var(--sp-6);">
+      <div style="display:flex;align-items:center;gap:var(--sp-3);margin-bottom:var(--sp-5);">
+        <div style="width:40px;height:40px;background:rgba(125,160,137,.12);border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="fas fa-robot" style="color:var(--moss);font-size:17px;"></i>
+        </div>
+        <div>
+          <h3 style="font-family:'DM Serif Display',serif;font-size:var(--t-md);">AI Focus Coach</h3>
+          <p style="font-size:var(--t-xs);color:var(--text-secondary);">Personalised to your rhythm</p>
+        </div>
+      </div>
+
+      <div id="coachMessageArea"
+           role="log" aria-live="polite" aria-label="Coach response"
+           style="background:var(--surface-subtle);padding:var(--sp-4);border-radius:var(--r-md);font-size:var(--t-sm);line-height:1.65;border-left:3px solid var(--moss);min-height:72px;display:flex;align-items:center;">
+        <span id="coachText" style="font-style:italic;color:var(--text-secondary);">"Your optimal deep work window is 8–11 AM. Ready to begin when you are."</span>
+      </div>
+
+      <div style="display:flex;gap:var(--sp-2);margin-top:var(--sp-4);">
+        <label for="coachInput" class="sr-only">Ask your focus coach</label>
+        <input type="text" id="coachInput" class="input-field"
+               placeholder="Ask for a tip, motivation…"
+               aria-label="Ask your focus coach">
+        <button id="askCoachBtn" class="btn" aria-label="Send message to coach"
+                style="width:44px;height:44px;flex-shrink:0;background:var(--moss);color:#fff;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-1);">
+          <i class="fas fa-paper-plane" style="font-size:14px;"></i>
+        </button>
+      </div>
+
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:var(--sp-3);">
+        <button class="quick-prompt btn" style="font-size:var(--t-xs);background:var(--surface-subtle);padding:4px 10px;border-radius:var(--r-full);color:var(--text-secondary);" data-q="Motivate me">✨ Motivate me</button>
+        <button class="quick-prompt btn" style="font-size:var(--t-xs);background:var(--surface-subtle);padding:4px 10px;border-radius:var(--r-full);color:var(--text-secondary);" data-q="Best time to focus">⏰ Best focus time</button>
+        <button class="quick-prompt btn" style="font-size:var(--t-xs);background:var(--surface-subtle);padding:4px 10px;border-radius:var(--r-full);color:var(--text-secondary);" data-q="I feel distracted">🌿 I'm distracted</button>
+      </div>
+    </div>
+
+    <!-- METRICS ROW (unchanged) -->
+    <div class="area-metrics fade-up" style="display:grid;grid-template-columns:repeat(2,1fr);gap:var(--sp-4);">
+      <div class="card" style="padding:var(--sp-5);">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:var(--sp-2);">
+          <span style="font-size:var(--t-sm);color:var(--text-secondary);font-weight:500;">Focus Score</span>
+          <i class="fas fa-chart-line" style="color:var(--moss);font-size:13px;opacity:.8;"></i>
+        </div>
+        <p class="metric-value" id="metricScore">84</p>
+        <p style="font-size:var(--t-xs);color:var(--success);margin-top:4px;display:flex;align-items:center;gap:4px;">
+          <i class="fas fa-arrow-up"></i> +6% vs yesterday
+        </p>
+      </div>
+
+      <div class="card" style="padding:var(--sp-5);">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:var(--sp-2);">
+          <span style="font-size:var(--t-sm);color:var(--text-secondary);font-weight:500;">Focus Time</span>
+          <i class="fas fa-clock" style="color:var(--moss);font-size:13px;opacity:.8;"></i>
+        </div>
+        <p class="metric-value"><span id="metricHours">4</span><span style="font-size:var(--t-md);font-family:'DM Serif Display',serif;">h</span> <span id="metricMins">32</span><span style="font-size:var(--t-md);font-family:'DM Serif Display',serif;">m</span></p>
+        <p style="font-size:var(--t-xs);color:var(--text-secondary);margin-top:4px;">today's deep work</p>
+      </div>
+
+      <div class="card" style="padding:var(--sp-5);">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:var(--sp-2);">
+          <span style="font-size:var(--t-sm);color:var(--text-secondary);font-weight:500;">Blocked</span>
+          <i class="fas fa-shield-alt" style="color:var(--moss);font-size:13px;opacity:.8;"></i>
+        </div>
+        <p class="metric-value" id="metricBlocked">23</p>
+        <p style="font-size:var(--t-xs);color:var(--text-secondary);margin-top:4px;">distractions blocked</p>
+      </div>
+
+      <div class="card" style="padding:var(--sp-5);">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:var(--sp-2);">
+          <span style="font-size:var(--t-sm);color:var(--text-secondary);font-weight:500;">Sessions</span>
+          <i class="fas fa-check-circle" style="color:var(--moss);font-size:13px;opacity:.8;"></i>
+        </div>
+        <p class="metric-value"><span id="metricSessions">3</span><span style="font-size:var(--t-md);font-family:'DM Serif Display',serif;color:var(--text-disabled);">/</span><span id="metricGoal" style="font-size:var(--t-md);font-family:'DM Serif Display',serif;color:var(--text-disabled);">5</span></p>
+        <div style="margin-top:6px;height:4px;background:var(--surface-subtle);border-radius:4px;overflow:hidden;">
+          <div id="sessionProgress" style="height:100%;background:var(--moss);border-radius:4px;transition:width .4s ease;width:60%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ANALYTICS (unchanged) -->
+    <div class="card area-analytics fade-up" style="padding:var(--sp-6);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-5);">
+        <h3 style="font-family:'DM Serif Display',serif;font-size:var(--t-md);">Weekly Focus</h3>
+        <span style="font-size:var(--t-xs);background:var(--surface-subtle);padding:4px 12px;border-radius:var(--r-full);color:var(--text-secondary);font-weight:500;">
+          🔥 <span id="streakCount">7</span>-day streak
+        </span>
+      </div>
+      <canvas id="focusChart" height="130" aria-label="Weekly focus time bar chart" role="img"></canvas>
+    </div>
+
+    <!-- DISTRACTION BLOCKER (unchanged) -->
+    <div class="card area-blocker fade-up" style="padding:var(--sp-6);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-2);">
+        <h3 style="font-family:'DM Serif Display',serif;font-size:var(--t-md);">Distraction Blocker</h3>
+        <div style="display:flex;align-items:center;gap:var(--sp-2);">
+          <span id="blockerStatusLabel" style="font-size:var(--t-xs);font-weight:600;display:flex;align-items:center;gap:5px;color:var(--moss);">
+            <i id="blockerStatusIcon" class="fas fa-shield-alt"></i>
+            <span id="blockerStatusText">Active</span>
+          </span>
+          <label for="blockerToggle" class="sr-only">Distraction blocker</label>
+          <input type="checkbox" id="blockerToggle" class="moss-toggle"
+                 role="switch" aria-checked="true" checked>
+        </div>
+      </div>
+
+      <button id="toggleBlockerList" class="btn"
+              aria-expanded="false" aria-controls="blockerCollapsible"
+              style="font-size:var(--t-sm);color:var(--moss-dark);display:flex;align-items:center;gap:6px;margin-bottom:var(--sp-3);padding:4px 0;background:none;">
+        <i id="blockerChevron" class="fas fa-chevron-down" style="font-size:11px;transition:transform .3s;"></i>
+        Manage blocked sites
+      </button>
+
+      <div id="blockerCollapsible" class="collapsible" aria-hidden="true">
+        <div id="blockedSitesList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:var(--sp-3);max-height:150px;overflow-y:auto;padding-right:4px;"></div>
+        <div style="display:flex;gap:var(--sp-2);">
+          <label for="newSiteInput" class="sr-only">Add blocked site</label>
+          <input type="text" id="newSiteInput" class="input-field" placeholder="e.g. youtube.com" aria-label="Add a site to block">
+          <button id="addSiteBtn" class="btn" aria-label="Add site to block list"
+                  style="width:44px;height:44px;flex-shrink:0;background:var(--moss);color:#fff;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;">
+            <i class="fas fa-plus" style="font-size:14px;"></i>
+          </button>
+        </div>
+      </div>
+
+      <button id="simulateDistractBtn" class="btn"
+              style="margin-top:var(--sp-4);font-size:var(--t-xs);color:var(--text-disabled);display:flex;align-items:center;gap:6px;background:none;text-decoration:underline;text-underline-offset:2px;">
+        <i class="fas fa-bug"></i> Simulate distraction attempt
+      </button>
+    </div>
+
+    <!-- TODAY'S PLAN (unchanged) -->
+    <div class="card area-plan fade-up" style="padding:var(--sp-6);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-5);">
+        <h3 style="font-family:'DM Serif Display',serif;font-size:var(--t-md);">Today's Plan</h3>
+        <button class="btn btn-secondary" aria-label="Add task" id="addTaskBtn"
+                style="height:36px;padding:0 12px;font-size:var(--t-xs);">
+          <i class="fas fa-plus" style="font-size:11px;"></i> Add task
+        </button>
+      </div>
+      <div id="focusPlanContainer" style="display:flex;flex-direction:column;gap:var(--sp-3);"></div>
+    </div>
+
+    <!-- AMBIENT SPACE (unchanged) -->
+    <div class="card area-ambient fade-up" style="padding:var(--sp-6);">
+      <h3 style="font-family:'DM Serif Display',serif;font-size:var(--t-md);margin-bottom:var(--sp-5);">Ambient Space</h3>
+      <div style="display:flex;gap:var(--sp-5);align-items:center;flex-wrap:wrap;">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:var(--sp-3);">
+          <div class="lamp-orb" id="mushroomLamp"
+               role="slider" aria-label="Ambient lamp brightness"
+               aria-valuemin="50" aria-valuemax="120" aria-valuenow="80"
+               tabindex="0">
+            <svg viewBox="0 0 100 100" width="80" height="80" aria-hidden="true">
+              <path d="M28 47 C28 28 72 28 72 47 C72 55 63 57 50 57 C37 57 28 55 28 47Z"
+                    fill="#E6B88A" stroke="#C8956A" stroke-width="1.2"/>
+              <rect x="46" y="57" width="8" height="20" rx="4" fill="#DBC09E"/>
+              <circle cx="43" cy="42" r="3" fill="rgba(255,255,255,.55)"/>
+              <circle cx="57" cy="40" r="2.2" fill="rgba(255,255,255,.45)"/>
+              <circle cx="36" cy="46" r="1.5" fill="rgba(255,255,255,.3)"/>
+            </svg>
+          </div>
+          <div style="text-align:center;">
+            <p style="font-size:var(--t-sm);font-weight:500;">Breathe</p>
+            <p id="lampBrightnessLabel" style="font-size:var(--t-xs);color:var(--text-secondary);">80% · Hold to brighten</p>
+          </div>
+        </div>
+        <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);min-width:180px;">
+          <button class="ambient-thumb btn" data-scene="Moss Haven" aria-label="Set Moss Haven scene">
+            <i class="fas fa-tree" style="font-size:22px;color:var(--moss);"></i>
+            <span style="font-size:var(--t-xs);font-weight:500;">Moss Haven</span>
+          </button>
+          <button class="ambient-thumb btn" data-scene="Calm Lake" aria-label="Set Calm Lake scene">
+            <i class="fas fa-water" style="font-size:22px;color:#6BA5C0;"></i>
+            <span style="font-size:var(--t-xs);font-weight:500;">Calm Lake</span>
+          </button>
+          <button class="ambient-thumb btn" data-scene="Mist Peak" aria-label="Set Mist Peak scene">
+            <i class="fas fa-mountain" style="font-size:22px;color:#8A9E9A;"></i>
+            <span style="font-size:var(--t-xs);font-weight:500;">Mist Peak</span>
+          </button>
+          <button class="ambient-thumb btn" data-scene="Twilight" aria-label="Set Twilight scene">
+            <i class="fas fa-cloud-moon" style="font-size:22px;color:#9B8FCC;"></i>
+            <span style="font-size:var(--t-xs);font-weight:500;">Twilight</span>
+          </button>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:var(--sp-5);padding-top:var(--sp-4);border-top:1px solid var(--border-default);">
+        <span style="font-size:var(--t-xs);color:var(--text-disabled);display:flex;align-items:center;gap:5px;"><i class="fas fa-palette"></i> Moss green theme</span>
+        <span style="font-size:var(--t-xs);color:var(--text-disabled);">MossFocus 1.1</span>
+      </div>
+    </div>
   </div>
-  <div class="bottom-nav" id="bottomNav"></div>
 </div>
-<div id="toast" class="toast"></div>
-<div id="modal" class="modal-overlay"></div>
-<div id="scanIndicator" class="scan-indicator">🔍 Scanning...</div>
-<div id="flashOverlay" class="scan-flash"></div>
+
+<!-- MOBILE BOTTOM NAV (unchanged) -->
+<nav class="bottom-nav lg:hidden" aria-label="Main navigation">
+  <button class="nav-item" aria-current="page" aria-label="Dashboard">
+    <i class="fas fa-tachometer-alt"></i>
+    <span>Focus</span>
+  </button>
+  <button class="nav-item" aria-label="Timer">
+    <i class="fas fa-hourglass-half"></i>
+    <span>Timer</span>
+  </button>
+  <button class="nav-item" aria-label="Coach">
+    <i class="fas fa-robot"></i>
+    <span>Coach</span>
+  </button>
+  <button class="nav-item" aria-label="Stats">
+    <i class="fas fa-chart-line"></i>
+    <span>Stats</span>
+  </button>
+</nav>
 
 <script>
-  // ==================== ENTERPRISE BARCODE POS ====================
-  const STORAGE_USERS = 'duka_ent_users';
-  const STORAGE_SESSION = 'duka_ent_session';
-  let currentUser = null, db = null;
-  let products = [], sales = [], expenses = [], customers = [], invoices = [], customerTxns = [];
-  let scanLogs = [], inventorySessions = [], stockAdjustments = [];
-  let activeTab = 'dashboard';
-  let saleCart = [];
-  let revenueChart = null, analyticsChart = null;
-  let html5QrCode = null;
-  let currentStockSession = null;
-  let lastScanTime = 0;
+/* ─── STATE with break support ─── */
+const S = {
+  mode:            'DeepWork',
+  timeRemaining:   50 * 60,
+  maxDuration:     50 * 60,
+  isRunning:       false,
+  isBreak:         false,
+  breakDuration:   5 * 60,        // 5 minutes break
+  interval:        null,
+  distractions:    23,
+  focusMinutes:    272,
+  sessions:        3,
+  dailyGoal:       5,
+  blockedSites:    ['youtube.com','twitter.com','instagram.com','facebook.com','reddit.com'],
+  brightness:      0.8,
+  _hiddenAt:       null,
+  _completingFlag: false,          // prevent double completion
+};
 
-  // Helpers
-  const fmt = n => 'KES ' + (n || 0).toLocaleString();
-  const showToast = (msg, err = false) => { let t = document.getElementById('toast'); t.textContent = msg; t.style.background = err ? 'var(--rose)' : 'var(--emerald)'; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 2800); };
-  const playBeep = () => { try { const audioCtx = new (AudioContext || webkitAudioContext)(); const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.frequency.value = 880; g.gain.value = 0.15; o.start(); g.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.3); o.stop(audioCtx.currentTime + 0.3); } catch(e) {} };
-  const vibrate = () => { if (navigator.vibrate) navigator.vibrate(80); };
-  const flash = () => { let f = document.getElementById('flashOverlay'); f.style.opacity = '0.3'; setTimeout(() => f.style.opacity = '0', 50); };
-  const showScanIndicator = (show) => { document.getElementById('scanIndicator').style.display = show ? 'flex' : 'none'; };
-  const openModal = (html) => { let m = document.getElementById('modal'); m.innerHTML = `<div class="modal-sheet">${html}<button class="btn" style="margin-top:20px" onclick="closeModal()">Close</button></div>`; m.classList.add('on'); };
-  const closeModal = () => document.getElementById('modal').classList.remove('on');
-  const toggleSidebar = () => document.getElementById('sidebar').classList.toggle('open');
+const MODES = {
+  Pomodoro: { label:'Pomodoro',  duration:25*60 },
+  DeepWork: { label:'Deep Work', duration:50*60 },
+  Flow:     { label:'Flow State',duration:90*60 },
+  Custom:   { label:'Custom',    duration:30*60 },
+};
 
-  // IndexedDB
-  function openUserDB(userId) {
-    return new Promise((res, rej) => {
-      let req = indexedDB.open(`duka_${userId}`, 7);
-      req.onupgradeneeded = e => {
-        let d = e.target.result;
-        ['products','sales','expenses','customers','customerTransactions','invoices','scanLogs','inventorySessions','stockAdjustments'].forEach(s => {
-          if (!d.objectStoreNames.contains(s)) d.createObjectStore(s, { keyPath: 'id', autoIncrement: true });
-        });
-        if (!d.objectStoreNames.contains('products')) d.createObjectStore('products', { keyPath: 'id', autoIncrement: true });
-      };
-      req.onsuccess = e => { db = e.target.result; res(); };
-      req.onerror = rej;
-    });
-  }
-  const getAll = store => new Promise(r => { let tx = db.transaction(store,'readonly').objectStore(store).getAll(); tx.onsuccess = () => r(tx.result); });
-  const addItem = (store, item) => new Promise(r => { let tx = db.transaction(store,'readwrite'), req = tx.objectStore(store).add(item); req.onsuccess = () => r(req.result); });
-  const updateItem = (store, item) => new Promise(r => { let tx = db.transaction(store,'readwrite'), req = tx.objectStore(store).put(item); req.onsuccess = () => r(); });
-  const deleteItem = (store, id) => new Promise(r => { let tx = db.transaction(store,'readwrite'), req = tx.objectStore(store).delete(id); req.onsuccess = () => r(); });
-  async function loadData() {
-    products = await getAll('products');
-    sales = await getAll('sales');
-    expenses = await getAll('expenses');
-    customers = await getAll('customers');
-    invoices = await getAll('invoices');
-    customerTxns = await getAll('customerTransactions');
-    scanLogs = await getAll('scanLogs');
-    inventorySessions = await getAll('inventorySessions');
-    stockAdjustments = await getAll('stockAdjustments');
-  }
+const BREAK_DURATION = 5 * 60;      // 5 minutes
 
-  // Auth
-  function hashPassword(pw) { let h = 0; for(let i=0;i<pw.length;i++){h=((h<<5)-h)+pw.charCodeAt(i);h|=0;} return Math.abs(h).toString(16); }
-  function getUsers() { return JSON.parse(localStorage.getItem(STORAGE_USERS)||'[]'); }
-  function saveUsers(users) { localStorage.setItem(STORAGE_USERS, JSON.stringify(users)); }
-  function findUser(email) { return getUsers().find(u=>u.email.toLowerCase()===email.toLowerCase()); }
-  function createSession(user) { let sess={userId:user.id, email:user.email, shopName:user.shopName, expires:Date.now()+7*86400000}; localStorage.setItem(STORAGE_SESSION, JSON.stringify(sess)); currentUser=user; }
-  function getSession() { let s=localStorage.getItem(STORAGE_SESSION); if(!s) return null; let sess=JSON.parse(s); if(Date.now()>sess.expires){localStorage.removeItem(STORAGE_SESSION); return null;} return sess; }
-  async function logout() { localStorage.removeItem(STORAGE_SESSION); db=null; location.reload(); }
-  async function login(email, password) {
-    let user = findUser(email);
-    if(!user || user.passwordHash !== hashPassword(password)) throw new Error('Invalid credentials');
-    createSession(user);
-    await openUserDB(user.id);
-    await loadData();
-    await seedData();
-    document.getElementById('app').style.display = 'flex';
-    await renderApp();
-  }
-  async function signup(shopName, email, password) {
-    if(findUser(email)) throw new Error('Email exists');
-    let userId = 'u'+Date.now()+'_'+Math.random().toString(36).substr(2,6);
-    let newUser = { id:userId, email:email.toLowerCase(), passwordHash:hashPassword(password), shopName };
-    let users = getUsers();
-    users.push(newUser);
-    saveUsers(users);
-    createSession(newUser);
-    await openUserDB(userId);
-    await loadData();
-    await seedData();
-    document.getElementById('app').style.display = 'flex';
-    await renderApp();
-  }
-  async function seedData() {
-    if(products.length===0){
-      await addItem('products', { name:'Sugar', unit:'kg', barcode:'890123456789', sku:'SUG-01', stock_qty:120, buying_price:100, selling_price:140, low_threshold:10 });
-      await addItem('products', { name:'Flour', unit:'kg', barcode:'890123456788', sku:'FLO-01', stock_qty:200, buying_price:70, selling_price:95, low_threshold:15 });
-      await addItem('products', { name:'Cooking Oil', unit:'L', barcode:'890123456787', sku:'OIL-01', stock_qty:80, buying_price:210, selling_price:270, low_threshold:8 });
-    }
-    if(customers.length===0){
-      await addItem('customers', { name:'Jane Wanjiku', phone:'0712345678', totalSpent:0, credit:0, debit:0, balance:0 });
-      await addItem('customers', { name:'Peter Omondi', phone:'0723456789', totalSpent:0, credit:0, debit:0, balance:0 });
-    }
-    await loadData();
-  }
+const COACH_REPLIES = [
+  "Each focused session compounds. You're building momentum.",
+  "Block out the noise. Your best work lives in deep silence.",
+  "Try the 2-min rule: if it takes less than 2 min, do it now — then focus.",
+  "Your resilience score is up +9% this week. Keep going.",
+  "Protect your mornings. The first 90 minutes set the tone for the day.",
+  "Studies show 25 min focus cycles reduce cognitive fatigue by 38%.",
+  "Your focus peak is likely between 9–11 AM. Plan your hardest task there.",
+  "Notice what pulls your attention. Awareness is the first step to control.",
+];
 
-  // Barcode Service
-  async function lookupProductByBarcode(barcode) {
-    let p = products.find(p=>p.barcode === barcode);
-    if(!p) p = products.find(p=>p.sku === barcode);
-    if(!p) p = products.find(p=>p.name.toLowerCase().includes(barcode.toLowerCase()));
-    return p;
-  }
-  async function addScanLog(barcode, productId, location='POS') {
-    await addItem('scanLogs', { barcode, productId, location, timestamp: new Date().toISOString() });
-    scanLogs = await getAll('scanLogs');
-  }
+/* ─── DOM references ─── */
+const $ = id => document.getElementById(id);
+const timerDisplay   = $('timerDisplay');
+const timerRingFill  = $('timerRingFill');
+const timerModeLabel = $('timerModeLabel');
+const timerStatus    = $('timerLiveStatus');
+const timerStatusTxt = $('timerStatusText');
+const globalStatus   = $('globalStatus');
+const globalStatusTxt= $('globalStatusText');
+const startBtn       = $('startBtn');
+const startBtnIcon   = $('startBtnIcon');
+const stopBtn        = $('stopBtn');
+const skipBtn        = $('skipBtn');
+const segBtns        = document.querySelectorAll('.seg-btn');
+const customPanel    = $('customPanel');
+const customMinutes  = $('customMinutes');
+const coachInput     = $('coachInput');
+const coachText      = $('coachText');
+const coachArea      = $('coachMessageArea');
+const blockerToggle  = $('blockerToggle');
+const blockerColls   = $('blockerCollapsible');
+const toggleBlockBtn = $('toggleBlockerList');
+const blockerChevron = $('blockerChevron');
+const blockerStatTxt = $('blockerStatusText');
+const blockerStatIco = $('blockerStatusIcon');
+const newSiteInput   = $('newSiteInput');
+const addSiteBtn     = $('addSiteBtn');
+const simulateBtn    = $('simulateDistractBtn');
+const mushroomLamp   = $('mushroomLamp');
+const lampLabel      = $('lampBrightnessLabel');
+const planContainer  = $('focusPlanContainer');
+const a11yAlerts     = $('a11y-alerts');
+const a11yStatus     = $('a11y-status');
 
-  // Stock Taking
-  async function startStockSession() {
-    currentStockSession = { id: Date.now(), startedAt: new Date().toISOString(), counts: {} };
-    showToast('Stock Taking started. Scan products to count.');
-    document.getElementById('stockSessionPanel').innerHTML = `<div class="card"><h3>📊 Live Stock Count</h3><div id="sessionStats">Scanned: 0 items</div><div id="sessionList" style="max-height:300px;overflow-y:auto"></div><div class="flex-between" style="margin-top:16px"><button class="btn btn-emerald" onclick="endStockSession()">Finish & Export</button><button class="btn" onclick="cancelStockSession()">Cancel</button></div></div>`;
-    updateStockUI();
+const CIRCUMFERENCE = 2 * Math.PI * 58; // 364.42
+
+/* ─── helpers (unchanged) ─── */
+function announce(msg, type='polite') {
+  const el = type==='assertive' ? a11yAlerts : a11yStatus;
+  el.textContent = '';
+  requestAnimationFrame(() => el.textContent = msg);
+}
+function showToast(msg) {
+  announce(msg, 'polite');
+  const activeToasts = [];
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2200);
+}
+
+/* ─── timer ring & display ─── */
+function updateRing() {
+  const progress = (S.maxDuration - S.timeRemaining) / S.maxDuration;
+  const offset   = CIRCUMFERENCE * (1 - progress);
+  timerRingFill.style.strokeDashoffset = offset;
+  timerRingFill.className = `ring-fill ${S.isBreak ? 'break' : 'work'}`;
+}
+function updateTimerDisplay() {
+  const m = Math.floor(S.timeRemaining / 60);
+  const s = S.timeRemaining % 60;
+  timerDisplay.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  document.title = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')} · MossFocus`;
+}
+function updateStatusBadges() {
+  if(S.isRunning) {
+    timerStatus.classList.add('live');
+    timerStatusTxt.textContent = 'LIVE';
+    globalStatus.classList.add('live');
+    globalStatusTxt.textContent = S.isBreak ? 'On break' : 'Focusing';
+    startBtnIcon.className = 'fas fa-pause';
+    startBtn.setAttribute('aria-label','Pause timer');
+  } else {
+    timerStatus.classList.remove('live');
+    timerStatusTxt.textContent = S.timeRemaining === S.maxDuration ? 'Ready' : 'Paused';
+    globalStatus.classList.remove('live');
+    globalStatusTxt.textContent = S.timeRemaining === S.maxDuration ? 'Ready' : 'Paused';
+    startBtnIcon.className = 'fas fa-play';
+    startBtn.setAttribute('aria-label','Start timer');
   }
-  async function handleStockScan(barcode) {
-    if(!currentStockSession) return false;
-    let product = await lookupProductByBarcode(barcode);
-    if(!product) { showToast(`Product not found: ${barcode}`, true); return false; }
-    let current = currentStockSession.counts[product.id] || 0;
-    currentStockSession.counts[product.id] = current + 1;
-    await addScanLog(barcode, product.id, 'STOCK_TAKE');
-    updateStockUI();
-    return true;
+}
+function updateMetrics() {
+  const score = Math.min(98, 60 + S.sessions*3 - Math.floor(S.distractions*0.25));
+  $('metricScore').textContent   = score;
+  $('metricHours').textContent   = Math.floor(S.focusMinutes/60);
+  $('metricMins').textContent    = S.focusMinutes % 60;
+  $('metricBlocked').textContent = S.distractions;
+  $('metricSessions').textContent= S.sessions;
+  $('metricGoal').textContent    = S.dailyGoal;
+  const pct = Math.round((S.sessions / S.dailyGoal) * 100);
+  $('sessionProgress').style.width = `${Math.min(100,pct)}%`;
+  const logs = safeStorage('focusLogs', []);
+  $('streakCount').textContent = Math.min(30, logs.length + 2);
+}
+function updateUI() {
+  updateTimerDisplay();
+  updateRing();
+  updateStatusBadges();
+  updateMetrics();
+  timerModeLabel.textContent = S.isBreak ? 'Break' : MODES[S.mode]?.label || 'Deep Work';
+  document.body.classList.toggle('break-mode', S.isBreak);
+}
+
+/* ─── Break / work transition core ─── */
+function startBreak() {
+  if (S.isBreak) return;
+  S.isBreak = true;
+  S.maxDuration = BREAK_DURATION;
+  S.timeRemaining = BREAK_DURATION;
+  if (S.isRunning) {
+    // if timer was running, we restart the interval with new duration
+    clearInterval(S.interval);
+    S.interval = setInterval(tick, 1000);
   }
-  function updateStockUI() {
-    let stats = document.getElementById('sessionStats');
-    let listDiv = document.getElementById('sessionList');
-    if(!stats || !listDiv) return;
-    let items = Object.entries(currentStockSession.counts);
-    let expectedTotal = products.reduce((a,p)=>a+p.stock_qty,0);
-    let countedTotal = items.reduce((a,[_,qty])=>a+qty,0);
-    stats.innerHTML = `Scanned: ${countedTotal} items | Expected: ${expectedTotal} | Variance: ${countedTotal-expectedTotal}`;
-    listDiv.innerHTML = items.map(([pid,qty])=>{
-      let p = products.find(pr=>pr.id==pid);
-      if(!p) return '';
-      let diff = qty - p.stock_qty;
-      return `<div class="flex-between" style="padding:8px 0;border-bottom:1px solid var(--border)"><span><b>${p.name}</b></span><span>Scanned: ${qty}</span><span>System: ${p.stock_qty}</span><span style="color:${diff===0?'var(--emerald)':'var(--rose)'}">${diff>0?`+${diff}`:diff}</span></div>`;
-    }).join('');
+  updateUI();
+  announce("Break started. Step away for a moment.");
+  showToast("🌿 Break time – relax and recharge");
+  setCoachMessage("Nice work. Step away from the screen, stretch, breathe. You've earned this pause.");
+}
+function startWork() {
+  if (!S.isBreak) return;
+  S.isBreak = false;
+  S.maxDuration = MODES[S.mode].duration;
+  S.timeRemaining = S.maxDuration;
+  if (S.isRunning) {
+    clearInterval(S.interval);
+    S.interval = setInterval(tick, 1000);
   }
-  async function endStockSession() {
-    if(!currentStockSession) return;
-    for(let [pid, scannedQty] of Object.entries(currentStockSession.counts)){
-      let prod = products.find(p=>p.id==pid);
-      if(prod && prod.stock_qty !== scannedQty){
-        let old = prod.stock_qty;
-        prod.stock_qty = scannedQty;
-        await updateItem('products', prod);
-        await addItem('stockAdjustments', { productId:pid, oldStock:old, newStock:scannedQty, date:new Date().toISOString(), sessionId:currentStockSession.id });
+  updateUI();
+  announce("Break finished. Back to deep work.");
+  showToast("🍅 Break over – back to focus");
+  setCoachMessage("Welcome back. Your focus depth is about to compound.");
+}
+
+/* ─── timer tick with session completion logic ─── */
+function tick() {
+  if (!S.isRunning) return;
+  if (S.timeRemaining <= 0) {
+    // prevent multiple completions
+    if (S._completingFlag) return;
+    S._completingFlag = true;
+    clearInterval(S.interval);
+    S.isRunning = false;
+
+    if (S.isBreak) {
+      // break finished -> start work session automatically
+      startWork();
+      // after switching to work, auto-start timer?
+      if (!S.isRunning) {
+        S.isRunning = true;
+        S.interval = setInterval(tick, 1000);
       }
-    }
-    await addItem('inventorySessions', currentStockSession);
-    showToast(`Stock session saved. Adjustments applied.`);
-    currentStockSession = null;
-    renderContent();
-  }
-  function cancelStockSession() { currentStockSession = null; renderContent(); }
-
-  // UI Navigation
-  function buildNav() {
-    let tabs = [
-      { id:'dashboard', icon:'📊', label:'Dashboard' },
-      { id:'sales', icon:'🛒', label:'POS' },
-      { id:'stockTake', icon:'📋', label:'Stock Take' },
-      { id:'products', icon:'📦', label:'Stock' },
-      { id:'customers', icon:'👥', label:'Clients' },
-      { id:'invoices', icon:'🧾', label:'Invoices' },
-      { id:'reports', icon:'📈', label:'Reports' },
-      { id:'expenses', icon:'💸', label:'Expenses' }
-    ];
-    document.getElementById('sideNav').innerHTML = tabs.map(t => `<button class="nav-item" onclick="switchTab('${t.id}')"><i>${t.icon}</i> ${t.label}</button>`).join('');
-    document.getElementById('bottomNav').innerHTML = tabs.map(t => `<button class="bottom-item" onclick="switchTab('${t.id}')"><div>${t.icon}</div><div>${t.label}</div></button>`).join('');
-  }
-  function switchTab(id) {
-    activeTab = id;
-    document.querySelectorAll('.nav-item, .bottom-item').forEach(el => el.classList.remove('active'));
-    document.querySelector(`.nav-item[onclick="switchTab('${id}')"]`)?.classList.add('active');
-    document.querySelector(`.bottom-item[onclick="switchTab('${id}')"]`)?.classList.add('active');
-    renderContent();
-    if(window.innerWidth<=1024) document.getElementById('sidebar').classList.remove('open');
-  }
-  function renderContent() {
-    let container = document.getElementById('mainContent');
-    if(activeTab === 'dashboard') container.innerHTML = renderDashboard();
-    else if(activeTab === 'sales') container.innerHTML = renderPOS();
-    else if(activeTab === 'stockTake') container.innerHTML = renderStockTake();
-    else if(activeTab === 'products') container.innerHTML = renderProducts();
-    else if(activeTab === 'customers') container.innerHTML = renderCustomers();
-    else if(activeTab === 'invoices') container.innerHTML = renderInvoices();
-    else if(activeTab === 'reports') container.innerHTML = renderReports();
-    else if(activeTab === 'expenses') container.innerHTML = renderExpenses();
-    if(activeTab === 'sales') attachPOSEvents();
-    if(activeTab === 'products') renderProductList();
-    if(activeTab === 'customers') { renderCustomerList(); attachCustomerSearch(); }
-    if(activeTab === 'invoices') renderInvoiceList();
-    if(activeTab === 'expenses') renderExpenseList();
-    if(activeTab === 'stockTake') attachStockTakeEvents();
-    if(activeTab === 'reports') renderReportsUI();
-    setTimeout(()=>{ let inp = document.getElementById('barcodeScanInput'); if(inp) inp.focus(); }, 150);
-  }
-
-  // Dashboard
-  function renderDashboard() {
-    let totalRev = sales.reduce((a,b)=>a+b.amount,0);
-    let totalExp = expenses.reduce((a,b)=>a+b.amount,0);
-    let profit = totalRev - totalExp;
-    let todaySales = sales.filter(s=>new Date(s.date).toDateString()===new Date().toDateString()).reduce((a,b)=>a+b.amount,0);
-    let lowStock = products.filter(p=>p.stock_qty<=p.low_threshold).length;
-    let scansToday = scanLogs.filter(l=>new Date(l.timestamp).toDateString()===new Date().toDateString()).length;
-    return `<div class="grid-2"><div class="stat-card"><div>💰 Revenue</div><div class="stat-value">${fmt(totalRev)}</div></div>
-      <div class="stat-card"><div>📉 Expenses</div><div class="stat-value">${fmt(totalExp)}</div></div>
-      <div class="stat-card"><div>📈 Profit</div><div class="stat-value">${fmt(profit)}</div></div>
-      <div class="stat-card"><div>🕒 Today</div><div class="stat-value">${fmt(todaySales)}</div></div>
-      <div class="stat-card"><div>⚠️ Low Stock</div><div class="stat-value">${lowStock}</div></div>
-      <div class="stat-card"><div>🔍 Scans Today</div><div class="stat-value">${scansToday}</div></div></div>`;
-  }
-
-  // POS with Barcode Scanner
-  function renderPOS() {
-    if(!products.length) return '<div class="loading">Loading...</div>';
-    return `<div class="card"><h3>🛒 Point of Sale</h3>
-      <div class="barcode-input-group"><input type="text" id="barcodeScanInput" placeholder="🔍 USB Barcode Scanner / Manual entry" autocomplete="off"><button class="btn btn-primary" id="manualBarcodeBtn">Add by Code</button><button class="btn btn-primary" id="cameraScanBtn">📷 Scan Camera</button></div>
-      <div id="scannerContainer" style="display:none;margin-top:12px"><div id="qr-reader" style="max-width:300px;margin:0 auto"></div><button class="btn" id="stopScannerBtn" style="margin-top:8px">Stop Camera</button></div>
-      <div class="flex-between" style="margin:16px 0;"><input id="posCustomer" placeholder="Customer name"><select id="posProductSelect">${products.map(p=>`<option value="${p.id}">${p.name} (${p.stock_qty} ${p.unit}) - ${fmt(p.selling_price)}</option>`)}</select><input id="posQty" type="number" value="1" min="1" style="width:90px"><button class="btn btn-primary" id="addToCartBtn">+ Add</button></div>
-      <div id="cartItems" class="card" style="margin:16px 0;background:rgba(0,0,0,0.3)"></div>
-      <div class="flex-between"><h4>Total: <span id="cartTotal">KES 0</span></h4><select id="payMethodSelect"><option value="cash">Cash</option><option value="mpesa">M-Pesa</option><option value="credit">Credit</option></select><button class="btn btn-emerald" id="completeSaleBtn">✅ Complete Sale</button></div>
-      <div id="invoicePreview" class="invoice-preview" style="margin-top:24px;display:none"></div>
-      <div class="flex-between" style="margin-top:16px"><small>⚡ Shortcuts: F2 (scan focus), F4 (checkout), ESC (cancel)</small></div></div>`;
-  }
-
-  async function handleBarcodeScan(barcode) {
-    if(!barcode) return;
-    showScanIndicator(true);
-    let product = await lookupProductByBarcode(barcode);
-    showScanIndicator(false);
-    if(!product) {
-      showToast(`Not found: ${barcode}`, true);
-      if(confirm(`Create new product for barcode ${barcode}?`)){
-        let name = prompt('Product name:'); if(!name) return;
-        let price = parseFloat(prompt('Selling price:'));
-        let unit = prompt('Unit:');
-        if(name && price){
-          await addItem('products', { name, unit, barcode, sku:'', stock_qty:0, selling_price:price, buying_price:0, low_threshold:5 });
-          await loadData();
-          showToast(`Product ${name} created`);
-          product = products.find(p=>p.barcode===barcode);
-        }
-      }
-      return;
-    }
-    await addScanLog(barcode, product.id);
-    playBeep(); vibrate(); flash();
-    let existing = saleCart.find(i=>i.id===product.id);
-    if(existing) existing.qty += 1;
-    else saleCart.push({ id:product.id, name:product.name, qty:1, price:product.selling_price, unit:product.unit });
-    updateCartUI();
-    let cartDiv = document.getElementById('cartItems');
-    if(cartDiv && cartDiv.lastChild) cartDiv.lastChild.classList.add('highlight');
-    setTimeout(()=>{ if(cartDiv && cartDiv.lastChild) cartDiv.lastChild.classList.remove('highlight'); }, 300);
-  }
-
-  function attachPOSEvents() {
-    let scanInput = document.getElementById('barcodeScanInput');
-    let manualBtn = document.getElementById('manualBarcodeBtn');
-    let cameraBtn = document.getElementById('cameraScanBtn');
-    let stopBtn = document.getElementById('stopScannerBtn');
-    if(scanInput){
-      scanInput.addEventListener('keypress', async (e) => {
-        if(e.key === 'Enter'){
-          e.preventDefault();
-          let code = scanInput.value.trim();
-          if(code) await handleBarcodeScan(code);
-          scanInput.value = '';
-          scanInput.focus();
-        }
-      });
-    }
-    if(manualBtn) manualBtn.onclick = async () => { let code = scanInput.value.trim(); if(code) await handleBarcodeScan(code); scanInput.value=''; scanInput.focus(); };
-    if(cameraBtn) cameraBtn.onclick = async () => {
-      let container = document.getElementById('scannerContainer');
-      container.style.display = 'block';
-      if(html5QrCode) try{await html5QrCode.stop();}catch(e){}
-      html5QrCode = new Html5Qrcode("qr-reader");
-      try {
-        await html5QrCode.start({ facingMode:"environment" }, { fps:10, qrbox:{width:200,height:200} }, async (decoded) => {
-          await handleBarcodeScan(decoded);
-          if(html5QrCode) await html5QrCode.stop();
-          container.style.display = 'none';
-        }, (err) => {});
-      } catch(err){ showToast("Camera error", true); container.style.display='none'; }
-    };
-    if(stopBtn) stopBtn.onclick = async () => { if(html5QrCode) await html5QrCode.stop(); document.getElementById('scannerContainer').style.display='none'; };
-    document.getElementById('addToCartBtn')?.addEventListener('click', () => {
-      let pid = parseInt(document.getElementById('posProductSelect').value);
-      let qty = parseFloat(document.getElementById('posQty').value)||1;
-      let prod = products.find(p=>p.id===pid);
-      if(prod){
-        let existing = saleCart.find(i=>i.id===prod.id);
-        if(existing) existing.qty += qty;
-        else saleCart.push({ id:prod.id, name:prod.name, qty, price:prod.selling_price, unit:prod.unit });
-        updateCartUI();
-      }
-      document.getElementById('posQty').value = 1;
-    });
-    document.getElementById('completeSaleBtn')?.addEventListener('click', async () => {
-      let custName = document.getElementById('posCustomer').value.trim();
-      if(!custName) return showToast('Customer required',true);
-      if(saleCart.length===0) return showToast('Cart empty',true);
-      let method = document.getElementById('payMethodSelect').value;
-      let total = saleCart.reduce((s,i)=>s+i.qty*i.price,0);
-      for(let item of saleCart){
-        let prod = products.find(p=>p.id===item.id);
-        if(prod.stock_qty < item.qty) return showToast(`Insufficient ${prod.name}`,true);
-        prod.stock_qty -= item.qty;
-        await updateItem('products', prod);
-      }
-      let cust = customers.find(c=>c.name.toLowerCase()===custName.toLowerCase());
-      if(!cust){ let cid=await addItem('customers',{name:custName,phone:'',totalSpent:0,credit:0,debit:0,balance:0}); cust={id:cid,name:custName}; customers.push(cust);}
-      if(method==='credit'){ cust.credit=(cust.credit||0)+total; cust.balance=cust.credit-(cust.debit||0); await updateItem('customers',cust); }
-      cust.totalSpent=(cust.totalSpent||0)+total;
-      await updateItem('customers',cust);
-      let saleObj={customerName:custName, items:saleCart.map(i=>({name:i.name,qty:i.qty,price:i.price})), amount:total, product:saleCart.map(i=>i.name).join(', '), method, date:new Date().toISOString() };
-      let saleId=await addItem('sales',saleObj);
-      let invNum=`INV-${new Date().getFullYear()}-${String(invoices.length+1).padStart(5,'0')}`;
-      let inv={number:invNum,saleId,customerName:custName, items:saleCart.map(i=>({name:i.name,qty:i.qty,price:i.price,unit:i.unit})), total, method, date:new Date().toISOString(), shopName:currentUser?.shopName||'Smart Duka'};
-      await addItem('invoices',inv);
-      invoices.push(inv);
-      showToast(`Invoice ${invNum}`);
-      let preview=document.getElementById('invoicePreview');
-      preview.style.display='block';
-      preview.innerHTML=renderInvoiceHTML(inv)+`<div class="flex-between" style="margin-top:12px"><button class="btn btn-primary" onclick="printInvoice(${inv.id})">Print</button><button class="btn" onclick="downloadInvoicePDF(${inv.id})">PDF</button></div>`;
-      saleCart=[]; updateCartUI(); document.getElementById('posCustomer').value='';
-      await loadData(); renderContent();
-    });
-    window.addEventListener('keydown', (e) => {
-      if(activeTab !== 'sales') return;
-      if(e.key === 'F2'){ e.preventDefault(); document.getElementById('barcodeScanInput')?.focus(); }
-      if(e.key === 'F4'){ e.preventDefault(); document.getElementById('completeSaleBtn')?.click(); }
-      if(e.key === 'Escape'){ e.preventDefault(); if(confirm('Cancel transaction?')){ saleCart=[]; updateCartUI(); } }
-    });
-  }
-  function updateCartUI(){
-    let cart=document.getElementById('cartItems'); if(!cart) return;
-    let total=saleCart.reduce((s,i)=>s+i.qty*i.price,0);
-    if(saleCart.length===0) cart.innerHTML='<div style="text-align:center;padding:20px">Cart empty</div>';
-    else cart.innerHTML=saleCart.map((item,idx)=>`<div class="flex-between"><span>${item.name} x${item.qty} ${item.unit}</span><span>${fmt(item.qty*item.price)}</span><button class="btn" onclick="removeCartItem(${idx})">✖</button></div>`).join('');
-    document.getElementById('cartTotal').innerText=fmt(total);
-  }
-  window.removeCartItem = (idx) => { saleCart.splice(idx,1); updateCartUI(); };
-  function renderInvoiceHTML(inv){
-    let itemsHtml=inv.items.map(i=>`<tr><td>${i.name}</td><td>${i.qty} ${i.unit||''}</td><td>${fmt(i.price)}</td></tr>`).join('');
-    return `<div style="background:white;color:#111;padding:20px;font-family:monospace;border-radius:16px"><h3 style="text-align:center">${inv.shopName}</h3><p style="text-align:center">${inv.number} | ${new Date(inv.date).toLocaleString()}</p><hr><p><b>Customer:</b> ${inv.customerName}</p><table style="width:100%"><thead><tr><th>Item</th><th>Qty</th><th>Price</th></tr></thead><tbody>${itemsHtml}</tbody></table><hr><p><b>Total:</b> ${fmt(inv.total)} | <b>Method:</b> ${inv.method}</p><p style="text-align:center">Thank you!</p></div>`;
-  }
-  window.printInvoice = async (id) => { let inv=invoices.find(i=>i.id===id); if(!inv) return; let win=window.open('','_blank'); win.document.write(renderInvoiceHTML(inv)); win.print(); };
-  window.downloadInvoicePDF = async (id) => { let inv=invoices.find(i=>i.id===id); let div=document.createElement('div'); div.innerHTML=renderInvoiceHTML(inv); document.body.appendChild(div); await html2pdf().from(div).save(); div.remove(); };
-
-  // Stock Take
-  function renderStockTake() { return `<div class="card"><h3>📦 Stock Taking Mode</h3><div id="stockSessionPanel"><button class="btn btn-primary" onclick="startStockSession()">Start New Session</button></div></div>`; }
-  function attachStockTakeEvents() { if(currentStockSession) updateStockUI(); }
-
-  // Products
-  function renderProducts() { return `<div class="card"><div class="flex-between"><h3>📦 Inventory</h3><button class="btn btn-primary" onclick="openAddProduct()">+ Add Product</button></div><div id="productList"></div></div>`; }
-  function renderProductList() { let list=document.getElementById('productList'); if(!list) return; list.innerHTML=products.map(p=>`<div class="flex-between" style="padding:12px 0;border-bottom:1px solid var(--border)"><div><b>${p.name}</b> (${p.unit})<br>Barcode: ${p.barcode||'—'} | SKU: ${p.sku||'—'}<br>Stock: ${p.stock_qty} | Sell: ${fmt(p.selling_price)}</div><div><button class="btn" onclick="restockProd(${p.id})">Restock</button><button class="btn btn-danger" onclick="deleteProduct(${p.id})">Delete</button></div></div>`).join(''); }
-  window.openAddProduct = () => { openModal(`<h3>New Product</h3><input id="prodName" placeholder="Name"><input id="prodUnit" placeholder="Unit"><input id="prodBarcode" placeholder="Barcode"><input id="prodSKU" placeholder="SKU"><input id="prodStock" type="number" placeholder="Stock"><input id="prodBuy" type="number" placeholder="Buy Price"><input id="prodSell" type="number" placeholder="Sell Price"><button class="btn btn-primary" onclick="saveProduct()">Save</button>`); };
-  window.saveProduct = async () => { let name=document.getElementById('prodName')?.value, unit=document.getElementById('prodUnit')?.value, barcode=document.getElementById('prodBarcode')?.value, sku=document.getElementById('prodSKU')?.value, stock=parseFloat(document.getElementById('prodStock')?.value), buy=parseFloat(document.getElementById('prodBuy')?.value), sell=parseFloat(document.getElementById('prodSell')?.value); if(name){ await addItem('products',{name,unit,barcode:barcode||null,sku:sku||null,stock_qty:stock,buying_price:buy,selling_price:sell,low_threshold:Math.max(5,stock*0.1)}); await loadData(); renderProductList(); closeModal(); } };
-  window.restockProd = async (id) => { let p=products.find(p=>p.id===id); let add=parseFloat(prompt(`Add stock to ${p.name}:`)); if(add>0){ p.stock_qty+=add; await updateItem('products',p); await loadData(); renderProductList(); } };
-  window.deleteProduct = async (id) => { if(confirm('Delete product?')){ await deleteItem('products',id); await loadData(); renderProductList(); } };
-
-  // Customers
-  function renderCustomers() { return `<div class="card"><div class="flex-between"><h3>👥 Clients</h3><button class="btn btn-primary" onclick="openAddCustomer()">+ Add</button></div><input id="custSearch" placeholder="Search..."><div id="customersList"></div></div>`; }
-  function attachCustomerSearch(){ document.getElementById('custSearch')?.addEventListener('input',()=>renderCustomerList()); }
-  function renderCustomerList(){ let list=document.getElementById('customersList'); if(!list) return; let search=document.getElementById('custSearch')?.value.toLowerCase()||''; let filtered=customers.filter(c=>c.name.toLowerCase().includes(search)); list.innerHTML=filtered.map(c=>`<div class="flex-between" style="padding:10px 0"><div><b>${c.name}</b><br>${c.phone||'—'} | Balance: ${fmt(c.balance||0)}</div><div><button class="btn" onclick="viewCustomerTxns(${c.id})">History</button><button class="btn btn-emerald" onclick="recordPaymentPrompt(${c.id})">Pay</button><button class="btn btn-danger" onclick="deleteCustomer(${c.id})">Delete</button></div></div>`).join(''); }
-  window.openAddCustomer = () => { openModal(`<h3>Add Client</h3><input id="custName" placeholder="Name"><input id="custPhone" placeholder="Phone"><button class="btn btn-primary" onclick="saveCustomer()">Save</button>`); };
-  window.saveCustomer = async () => { let name=document.getElementById('custName')?.value.trim(), phone=document.getElementById('custPhone')?.value.trim(); if(name){ await addItem('customers',{name,phone,totalSpent:0,credit:0,debit:0,balance:0}); await loadData(); renderCustomerList(); closeModal(); } };
-  window.recordPaymentPrompt = (id) => { let cust=customers.find(c=>c.id===id); openModal(`<h3>Payment - ${cust.name}</h3><div>Balance: ${fmt(cust.balance||0)}</div><input id="payAmount" type="number"><button class="btn btn-emerald" onclick="recordPayment(${id})">Pay</button>`); };
-  window.recordPayment = async (id) => { let amt=parseFloat(document.getElementById('payAmount')?.value); if(!amt) return; let cust=customers.find(c=>c.id===id); let actual=Math.min(amt,cust.balance||0); if(actual<=0) return; cust.debit=(cust.debit||0)+actual; cust.balance=cust.credit-cust.debit; await updateItem('customers',cust); await addItem('customerTransactions',{customerId:id,type:'debit',amount:actual,note:'Payment',date:new Date().toISOString()}); await loadData(); renderCustomerList(); closeModal(); showToast(`Payment ${fmt(actual)}`); };
-  window.viewCustomerTxns = (id) => { let txns=customerTxns.filter(t=>t.customerId===id); openModal(`<h3>Transactions</h3>${txns.map(t=>`<div>${new Date(t.date).toLocaleDateString()} ${t.type}: ${fmt(t.amount)}</div>`).join('')||'None'}`); };
-  window.deleteCustomer = async (id) => { if(confirm('Delete customer?')){ await deleteItem('customers',id); await loadData(); renderCustomerList(); } };
-
-  // Invoices & Expenses
-  function renderInvoices() { return `<div class="card"><h3>🧾 Invoices</h3><div id="invoiceHistory"></div></div>`; }
-  function renderInvoiceList() { let list=document.getElementById('invoiceHistory'); if(!list) return; list.innerHTML=invoices.slice().reverse().map(inv=>`<div class="flex-between" style="padding:12px 0;border-bottom:1px solid var(--border)"><div><b>${inv.number}</b><br>${inv.customerName} | ${fmt(inv.total)}</div><button class="btn" onclick="viewInvoiceModal(${inv.id})">View</button></div>`).join(''); }
-  window.viewInvoiceModal = (id) => { let inv=invoices.find(i=>i.id===id); if(inv) openModal(renderInvoiceHTML(inv)+`<div class="flex-between" style="margin-top:16px"><button class="btn btn-primary" onclick="printInvoice(${id})">Print</button><button class="btn" onclick="downloadInvoicePDF(${id})">PDF</button></div>`); };
-  function renderExpenses() { return `<div class="card"><h3>💸 Expenses</h3><div id="expensesList"></div><button class="btn btn-primary" onclick="openAddExpense()">+ Add</button></div>`; }
-  function renderExpenseList() { let list=document.getElementById('expensesList'); if(!list) return; list.innerHTML=expenses.map(e=>`<div class="flex-between" style="padding:10px 0"><span>${e.title}</span><span>${fmt(e.amount)}</span><button class="btn btn-danger" onclick="deleteExpense(${e.id})">Delete</button></div>`).join(''); }
-  window.openAddExpense = () => { openModal(`<h3>Add Expense</h3><input id="expTitle" placeholder="Title"><input id="expAmount" type="number"><button class="btn btn-primary" onclick="saveExpense()">Save</button>`); };
-  window.saveExpense = async () => { let title=document.getElementById('expTitle')?.value, amt=parseFloat(document.getElementById('expAmount')?.value); if(title&&amt){ await addItem('expenses',{title,amount:amt,date:new Date().toISOString()}); await loadData(); renderExpenseList(); closeModal(); } };
-  window.deleteExpense = async (id) => { if(confirm('Delete?')){ await deleteItem('expenses',id); await loadData(); renderExpenseList(); } };
-
-  // Reports
-  function renderReports() { return `<div class="card"><h3>📈 Advanced Reports</h3><div id="reportsPanel"></div></div>`; }
-  async function renderReportsUI() {
-    let panel=document.getElementById('reportsPanel'); if(!panel) return;
-    let fastMoving = [...sales.reduce((map,s)=>{map.set(s.product,(map.get(s.product)||0)+1); return map;}, new Map())].sort((a,b)=>b[1]-a[1]).slice(0,5);
-    let scanFreq = [...scanLogs.reduce((map,log)=>{map.set(log.barcode,(map.get(log.barcode)||0)+1); return map;}, new Map())].sort((a,b)=>b[1]-a[1]).slice(0,5);
-    panel.innerHTML = `<div class="grid-2"><div class="card"><h4>🏆 Fast Moving</h4>${fastMoving.map(([n,q])=>`<div>${n}: ${q} sales</div>`).join('')||'No data'}</div>
-      <div class="card"><h4>🔍 Most Scanned</h4>${scanFreq.map(([c,cnt])=>`<div>${c}: ${cnt} scans</div>`).join('')||'None'}</div>
-      <div class="card"><h4>📉 Recent Adjustments</h4>${stockAdjustments.slice(-5).reverse().map(adj=>{ let p=products.find(pr=>pr.id==adj.productId); return `<div>${p?.name}: ${adj.oldStock} → ${adj.newStock}</div>`;}).join('')||'None'}</div>
-      <div class="card"><h4>⚠️ Low Stock</h4>${products.filter(p=>p.stock_qty<=p.low_threshold).map(p=>`<div>${p.name}: ${p.stock_qty} left</div>`).join('')||'All good'}</div></div>
-      <div class="flex-between" style="margin-top:16px"><button class="btn btn-primary" onclick="exportStockCSV()">📎 Export Stock CSV</button><button class="btn btn-primary" onclick="exportScansCSV()">📎 Export Scans CSV</button></div>`;
-  }
-  async function exportStockCSV(){ let csv="ID,Name,Stock,Low Threshold\n"+products.map(p=>`${p.id},${p.name},${p.stock_qty},${p.low_threshold}`).join('\n'); let blob=new Blob([csv],{type:'text/csv'}); let a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='stock_report.csv'; a.click(); URL.revokeObjectURL(a.href); }
-  async function exportScansCSV(){ let csv="Timestamp,Barcode,Product,Location\n"+scanLogs.map(l=>{ let p=products.find(pr=>pr.id==l.productId); return `${l.timestamp},${l.barcode},${p?.name||'?'},${l.location}`; }).join('\n'); let blob=new Blob([csv],{type:'text/csv'}); let a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='scan_logs.csv'; a.click(); URL.revokeObjectURL(a.href); }
-
-  async function renderApp() { buildNav(); await loadData(); renderContent(); }
-
-  // Auth Init
-  (async function init() {
-    let sess = getSession();
-    if(sess){
-      try {
-        currentUser = { id:sess.userId, email:sess.email, shopName:sess.shopName };
-        await openUserDB(sess.userId);
-        await loadData();
-        await seedData();
-        document.getElementById('app').style.display = 'flex';
-        await renderApp();
-      } catch(e){ console.error(e); logout(); }
     } else {
-      document.getElementById('app').style.display = 'none';
-      let authHtml = `<div style="position:fixed;inset:0;background:#050B08;display:flex;align-items:center;justify-content:center;z-index:200"><div class="card" style="max-width:380px"><div style="font-family:var(--font-serif);font-size:36px">Smart <em style="color:var(--gold)">Duka</em></div><input id="authEmail" placeholder="Email"><input id="authPass" type="password" placeholder="Password"><input id="authShop" placeholder="Shop Name (signup)" style="display:none"><div style="display:flex;gap:12px;margin-top:16px"><button id="authLoginBtn" class="btn btn-primary">Login</button><button id="authSignupBtn" class="btn">Sign Up</button></div></div></div>`;
-      document.body.insertAdjacentHTML('beforeend', authHtml);
-      let loginBtn=document.getElementById('authLoginBtn'), signupBtn=document.getElementById('authSignupBtn');
-      let shopField=document.getElementById('authShop');
-      loginBtn.onclick = async () => { let email=document.getElementById('authEmail').value, pwd=document.getElementById('authPass').value; try{ await login(email,pwd); location.reload(); } catch(e){ alert(e.message); } };
-      signupBtn.onclick = async () => { let email=document.getElementById('authEmail').value, pwd=document.getElementById('authPass').value, shop=shopField.value; if(!shop){ shopField.style.display='block'; shopField.focus(); return; } try{ await signup(shop,email,pwd); location.reload(); } catch(e){ alert(e.message); } };
+      // work session finished
+      S.sessions++;
+      const minutesGained = Math.floor(S.maxDuration / 60);
+      S.focusMinutes += minutesGained;
+      saveLog(minutesGained);
+      updateUI();
+      updateChart();
+      showToast('✅ Session complete! Great work 🌿');
+      announce('Focus session complete! Well done.', 'assertive');
+      setCoachMessage('Outstanding focus! Now take a mindful 5-minute break.');
+      // automatically start break (do not restart work timer yet)
+      startBreak();
+      if (!S.isRunning) {
+        S.isRunning = true;
+        S.interval = setInterval(tick, 1000);
+      }
     }
-  })();
+    updateUI();
+    S._completingFlag = false;
+    return;
+  }
+  S.timeRemaining--;
+  updateUI();
+}
+
+/* ─── timer controls ─── */
+function startTimer() {
+  if (S.isRunning) { pauseTimer(); return; }
+  S.isRunning = true;
+  S.interval = setInterval(tick, 1000);
+  updateUI();
+  announce(`${S.isBreak ? 'Break' : MODES[S.mode].label} session started. ${Math.floor(S.maxDuration/60)} minutes.`);
+}
+function pauseTimer() {
+  S.isRunning = false;
+  clearInterval(S.interval);
+  updateUI();
+  announce('Timer paused.');
+}
+function stopTimer() {
+  S.isRunning = false;
+  clearInterval(S.interval);
+  S.isBreak = false;
+  S.maxDuration = MODES[S.mode].duration;
+  S.timeRemaining = S.maxDuration;
+  document.body.classList.remove('break-mode');
+  updateUI();
+  showToast('Timer stopped');
+  announce('Timer stopped and reset to work mode.');
+}
+function skipBreak() {
+  if (S.isBreak) {
+    // skip break and immediately start work
+    clearInterval(S.interval);
+    S.isRunning = false;
+    startWork();
+    // auto-start work timer for seamless experience
+    S.isRunning = true;
+    S.interval = setInterval(tick, 1000);
+    showToast('⏩ Break skipped – back to focus');
+    announce('Break skipped. Returning to deep work.');
+  } else {
+    stopTimer();
+    showToast('Timer reset');
+  }
+}
+
+/* ─── mode switching (preserves break state) ─── */
+function setMode(mode) {
+  if (S.isRunning) {
+    showToast('Please stop the timer before changing mode');
+    return;
+  }
+  S.mode = mode;
+  S.isBreak = false;
+  if (mode === 'Custom') {
+    const mins = parseInt(customMinutes.value) || 30;
+    MODES.Custom.duration = mins * 60;
+  }
+  S.maxDuration = MODES[mode].duration;
+  S.timeRemaining = S.maxDuration;
+  segBtns.forEach(b => b.setAttribute('aria-selected', b.dataset.mode === mode ? 'true' : 'false'));
+  customPanel.style.display = mode === 'Custom' ? 'flex' : 'none';
+  updateUI();
+  announce(`${MODES[mode].label} mode selected.`);
+}
+
+/* ─── custom minutes handler (only when stopped) ─── */
+function updateCustomDuration() {
+  if (S.mode !== 'Custom') return;
+  if (S.isRunning) {
+    showToast('Stop the timer to change Custom duration');
+    customMinutes.value = Math.floor(S.maxDuration / 60);
+    return;
+  }
+  const mins = parseInt(customMinutes.value) || 30;
+  if (mins < 1) customMinutes.value = 1;
+  if (mins > 180) customMinutes.value = 180;
+  const newDur = (parseInt(customMinutes.value) || 30) * 60;
+  MODES.Custom.duration = newDur;
+  S.maxDuration = newDur;
+  S.timeRemaining = newDur;
+  updateUI();
+  showToast(`Custom focus set to ${Math.floor(newDur/60)} minutes`);
+}
+
+/* ─── coach (unchanged logic, only typing race fixed) ─── */
+let pendingCoach = false;
+async function askCoach(query) {
+  if (pendingCoach) return;
+  const q = query || coachInput.value.trim() || 'motivate me';
+  if (!q) return;
+  coachInput.value = '';
+  pendingCoach = true;
+  setCoachMessage('', true);
+  await new Promise(r => setTimeout(r, 700 + Math.random() * 500));
+  const lq = q.toLowerCase();
+  let response;
+  if (lq.includes('motivat') || lq.includes('push'))
+    response = COACH_REPLIES[0];
+  else if (lq.includes('time') || lq.includes('when'))
+    response = COACH_REPLIES[6];
+  else if (lq.includes('distract'))
+    response = COACH_REPLIES[7];
+  else
+    response = COACH_REPLIES[Math.floor(Math.random() * COACH_REPLIES.length)];
+  setCoachMessage(`"${response}"`);
+  pendingCoach = false;
+}
+function setCoachMessage(msg, isTyping=false) {
+  if(isTyping) {
+    coachText.innerHTML = `<span class="typing-dots"><span></span><span></span><span></span></span>`;
+    coachArea.style.opacity = '0.7';
+  } else {
+    coachArea.style.opacity = '1';
+    coachText.style.opacity = '0';
+    coachText.textContent = msg;
+    coachText.style.fontStyle = 'italic';
+    coachText.animate([{opacity:0},{opacity:1}],{duration:300,fill:'forwards'});
+    announce(msg, 'polite');
+  }
+}
+
+/* ─── distraction blocker (unchanged but fixed visibility logic later) ─── */
+function renderBlockedSites() {
+  const container = $('blockedSitesList');
+  if(S.blockedSites.length === 0) {
+    container.innerHTML = `<p style="font-size:var(--t-sm);color:var(--text-disabled);text-align:center;padding:8px;">No sites blocked yet</p>`;
+    return;
+  }
+  container.innerHTML = S.blockedSites.map(site => `
+    <div class="site-row">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <i class="fas fa-ban" style="color:var(--danger);font-size:12px;flex-shrink:0;"></i>
+        <span style="font-size:var(--t-sm);color:var(--text-primary);word-break:break-all;">${site}</span>
+      </div>
+      <button class="btn remove-site" data-site="${site}" aria-label="Remove ${site} from block list"
+              style="width:32px;height:32px;border-radius:var(--r-sm);background:rgba(212,100,90,.08);color:var(--danger);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i class="fas fa-trash-alt" style="font-size:11px;pointer-events:none;"></i>
+      </button>
+    </div>
+  `).join('');
+  container.querySelectorAll('.remove-site').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const site = btn.dataset.site;
+      S.blockedSites = S.blockedSites.filter(s => s !== site);
+      renderBlockedSites();
+      showToast(`Removed ${site}`);
+    });
+  });
+}
+function addSite() {
+  const site = newSiteInput.value.trim().toLowerCase().replace(/^https?:\/\//,'').replace(/\/.*$/,'');
+  if(!site) { showToast('Please enter a valid domain'); return; }
+  if(S.blockedSites.includes(site)) { showToast('Already in your block list'); return; }
+  S.blockedSites.push(site);
+  renderBlockedSites();
+  newSiteInput.value = '';
+  showToast(`🛡️ Blocked ${site}`);
+  announce(`${site} added to block list.`);
+}
+
+/* ─── today's plan (unchanged) ─── */
+let tasks = [
+  { text: 'Deep Work Session: 9:00–10:30', done: false },
+  { text: 'Project Research: 11:00–12:00', done: false },
+  { text: 'Review & Plan Tomorrow: 4:00–4:30', done: false },
+];
+function renderPlan() {
+  planContainer.innerHTML = tasks.map((t,i) => `
+    <div class="plan-task" style="display:flex;align-items:center;gap:var(--sp-3);background:var(--surface-subtle);padding:10px 14px;border-radius:var(--r-md);">
+      <input type="checkbox" class="plan-check" id="task${i}" data-idx="${i}" ${t.done?'checked':''} aria-label="${t.text}">
+      <label for="task${i}" style="font-size:var(--t-sm);flex:1;cursor:pointer;line-height:1.4;${t.done?'text-decoration:line-through;opacity:.5;':''}">${t.text}</label>
+    </div>
+  `).join('');
+  planContainer.querySelectorAll('.plan-check').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const i = parseInt(cb.dataset.idx);
+      tasks[i].done = cb.checked;
+      const label = planContainer.querySelector(`label[for="task${i}"]`);
+      label.style.textDecoration = cb.checked ? 'line-through' : '';
+      label.style.opacity = cb.checked ? '0.5' : '1';
+      showToast(cb.checked ? '✅ Task complete!' : 'Task reopened');
+      announce(cb.checked ? `${tasks[i].text} marked complete.` : `${tasks[i].text} reopened.`);
+      updateMetrics();
+    });
+  });
+}
+
+/* ─── chart & storage ─── */
+let focusChartInstance = null;
+function updateChart() {
+  const logs = safeStorage('focusLogs', []);
+  const data = [];
+  for(let i=6;i>=0;i--) {
+    const d = new Date();
+    d.setDate(d.getDate()-i);
+    const day = d.toISOString().slice(0,10);
+    const found = logs.find(l=>l.date===day);
+    data.push(found ? found.minutes : 30+Math.floor(Math.random()*25));
+  }
+  if(focusChartInstance) focusChartInstance.destroy();
+  const ctx = $('focusChart').getContext('2d');
+  focusChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+      datasets: [{
+        label: 'Focus (min)',
+        data,
+        backgroundColor: (ctx) => {
+          const g = ctx.chart.ctx.createLinearGradient(0,0,0,130);
+          g.addColorStop(0,'rgba(125,160,137,.85)');
+          g.addColorStop(1,'rgba(125,160,137,.35)');
+          return g;
+        },
+        borderRadius: 8,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { grid: { color: 'rgba(232,224,212,.6)' }, ticks: { color: '#3D4F47', font: { size: 11 } } } }
+    }
+  });
+}
+function safeStorage(key, fallback) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+  catch { return fallback; }
+}
+function saveLog(minutes) {
+  try {
+    let logs = safeStorage('focusLogs', []);
+    const today = new Date().toISOString().slice(0,10);
+    const idx = logs.findIndex(l => l.date===today);
+    if(idx > -1) logs[idx].minutes += minutes;
+    else logs.push({ date: today, minutes });
+    logs = logs.slice(-30);
+    localStorage.setItem('focusLogs', JSON.stringify(logs));
+  } catch {}
+}
+function ensureSampleLogs() {
+  const existing = safeStorage('focusLogs', []);
+  if(existing.length > 0) return;
+  const sample = [];
+  for(let i=6;i>=0;i--) {
+    const d = new Date();
+    d.setDate(d.getDate()-i);
+    sample.push({ date: d.toISOString().slice(0,10), minutes: 35+Math.floor(Math.random()*30) });
+  }
+  try { localStorage.setItem('focusLogs', JSON.stringify(sample)); } catch {}
+}
+
+/* ─── mushroom lamp (unchanged) ─── */
+let holdTimer, brightnessRamp;
+function setLampBrightness(v) {
+  S.brightness = Math.min(1.2, Math.max(0.4, v));
+  const pct = Math.round(S.brightness * 100);
+  const glow = 8 + S.brightness * 18;
+  mushroomLamp.style.boxShadow = `0 0 ${glow}px rgba(255,179,146,${.15+S.brightness*.25}), 0 0 ${glow*2}px rgba(255,179,146,${.06+S.brightness*.1}), var(--shadow-1)`;
+  mushroomLamp.style.filter = `brightness(${0.75 + S.brightness * 0.4})`;
+  lampLabel.textContent = `${pct}% · Hold to adjust`;
+  mushroomLamp.setAttribute('aria-valuenow', pct);
+}
+mushroomLamp.addEventListener('mousedown', () => {
+  holdTimer = setTimeout(() => { brightnessRamp = setInterval(() => setLampBrightness(S.brightness + 0.015), 60); }, 300);
+});
+mushroomLamp.addEventListener('mouseup', () => {
+  clearTimeout(holdTimer); clearInterval(brightnessRamp);
+  showToast(`🍄 Brightness ${Math.round(S.brightness*100)}%`);
+});
+mushroomLamp.addEventListener('mouseleave', () => { clearTimeout(holdTimer); clearInterval(brightnessRamp); });
+mushroomLamp.addEventListener('touchstart', e => { e.preventDefault();
+  holdTimer = setTimeout(() => { brightnessRamp = setInterval(()=>setLampBrightness(S.brightness+0.015),60); },300);
+},{ passive:false });
+mushroomLamp.addEventListener('touchend', () => {
+  clearTimeout(holdTimer); clearInterval(brightnessRamp);
+  showToast(`🍄 Brightness ${Math.round(S.brightness*100)}%`);
+});
+mushroomLamp.addEventListener('keydown', e => {
+  if(e.key==='ArrowUp') setLampBrightness(S.brightness+.05);
+  if(e.key==='ArrowDown') setLampBrightness(S.brightness-.05);
+});
+
+/* ─── ambient scenes (unchanged) ─── */
+document.querySelectorAll('.ambient-thumb').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.ambient-thumb').forEach(b => {
+      b.style.background = '';
+      b.style.boxShadow = '';
+    });
+    btn.style.background = 'rgba(125,160,137,.15)';
+    btn.style.boxShadow = `inset 0 0 0 2px var(--moss)`;
+    showToast(`🌿 ${btn.dataset.scene} activated`);
+  });
+});
+
+/* ─── EVENT LISTENERS (fixed visibility distraction) ─── */
+startBtn.addEventListener('click', startTimer);
+stopBtn.addEventListener('click', stopTimer);
+skipBtn.addEventListener('click', skipBreak);
+segBtns.forEach(btn => btn.addEventListener('click', () => setMode(btn.dataset.mode)));
+customMinutes.addEventListener('change', updateCustomDuration);
+$('askCoachBtn').addEventListener('click', () => askCoach());
+coachInput.addEventListener('keydown', e => { if(e.key==='Enter') askCoach(); });
+document.querySelectorAll('.quick-prompt').forEach(btn => {
+  btn.addEventListener('click', () => askCoach(btn.dataset.q));
+});
+blockerToggle.addEventListener('change', (e) => {
+  const on = e.target.checked;
+  e.target.setAttribute('aria-checked', String(on));
+  blockerStatTxt.textContent = on ? 'Active' : 'Off';
+  blockerStatIco.className   = on ? 'fas fa-shield-alt' : 'far fa-shield-alt';
+  $('blockerStatusLabel').style.color = on ? 'var(--moss)' : 'var(--text-disabled)';
+  showToast(on ? '🛡️ Blocker activated' : '⚠️ Blocker disabled');
+});
+toggleBlockBtn.addEventListener('click', () => {
+  const isOpen = blockerColls.classList.contains('open');
+  blockerColls.classList.toggle('open');
+  blockerChevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+  toggleBlockBtn.setAttribute('aria-expanded', String(!isOpen));
+});
+addSiteBtn.addEventListener('click', addSite);
+newSiteInput.addEventListener('keydown', e => { if(e.key==='Enter') addSite(); });
+simulateBtn.addEventListener('click', () => {
+  if(blockerToggle.checked) {
+    S.distractions++;
+    updateUI();
+    showToast('🛡️ Distraction blocked by AI');
+    setCoachMessage('"Distraction attempt blocked. Your focus shield held firm. Keep going."');
+    announce('Distraction blocked.', 'assertive');
+  } else {
+    showToast('⚠️ Blocker is off — distraction allowed through');
+  }
+});
+$('addTaskBtn').addEventListener('click', () => {
+  const name = prompt('New task name:');
+  if(name && name.trim()) {
+    tasks.push({ text: name.trim(), done: false });
+    renderPlan();
+    showToast('Task added');
+  }
+});
+
+/* ─── VISIBILITY API FIX: only count if work session is running and blocker on ─── */
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && S.isRunning && blockerToggle.checked && !S.isBreak) {
+    S._hiddenAt = Date.now();
+  } else if (!document.hidden && S._hiddenAt) {
+    const elapsed = Date.now() - S._hiddenAt;
+    S._hiddenAt = null;
+    if (elapsed > 3000 && S.isRunning && blockerToggle.checked && !S.isBreak) {
+      S.distractions++;
+      updateUI();
+      showToast('⚠️ Extended tab switch detected');
+      setCoachMessage('"Stay on task — the deep work zone rewards persistence."');
+      announce('Distraction: tab switch detected.', 'assertive');
+    }
+  }
+});
+
+/* ─── mobile nav (cosmetic) ─── */
+document.querySelectorAll('.nav-item').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(b => b.removeAttribute('aria-current'));
+    btn.setAttribute('aria-current','page');
+  });
+});
+
+/* ─── INIT ─── */
+(function init() {
+  ensureSampleLogs();
+  renderBlockedSites();
+  renderPlan();
+  updateChart();
+  setMode('DeepWork');
+  setLampBrightness(0.8);
+  updateUI();
+  // Ensure custom panel initial state
+  customPanel.style.display = 'none';
+})();
 </script>
 </body>
-</html>
+              </html>
